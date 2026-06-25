@@ -4,7 +4,7 @@ A reusable toolkit for managing a French **EURL accountant workspace** — a fol
 of receipts, payslips, tax documents and correspondence described as validated
 YAML fiches, then pushed to accounting tools.
 
-It ships three things from one repo:
+It ships four things from one repo:
 
 1. **A Claude Code plugin** (`plugins/accountant`) — skills
    that turn source documents into YAML fiches and push their metadata to Tiime
@@ -12,7 +12,10 @@ It ships three things from one repo:
 2. **`accountant` CLI** (`packages/accountant-cli`) — validates
    the YAML the skills produce against bundled JSON Schemas, plus inter-file
    consistency checks. Deterministic, no LLM, fast, low token cost.
-3. **`revolut` CLI** (`packages/revolut-cli`) — a read-only
+3. **`accountant-mcp` MCP server** (`packages/accountant-mcp`) — exposes every
+   skill as an MCP prompt so any MCP-compatible client (Cursor, Zed, Gemini with
+   MCP plugin, local LLMs) can load them without Claude Code.
+4. **`revolut` CLI** (`packages/revolut-cli`) — a read-only
    client of the official Revolut Business API, used by the
    `revolut-attach-justificatifs-cli` skill to inventory expenses without
    driving a browser.
@@ -79,8 +82,9 @@ npm run build                            # builds every package → dist/
 npm test                                 # runs every package's tests
 
 # expose the bins globally (symlinks into this checkout)
-( cd packages/accountant-cli && npm link )   # → `accountant`
-( cd packages/revolut-cli   && npm link )    # → `revolut`
+( cd packages/accountant-cli  && npm link )   # → `accountant`
+( cd packages/revolut-cli     && npm link )   # → `revolut`
+( cd packages/accountant-mcp  && npm link )   # → `accountant-mcp`  (MCP server)
 ```
 
 Because `npm link` symlinks the global command at `dist/index.js`, a later
@@ -88,6 +92,33 @@ Because `npm link` symlinks the global command at `dist/index.js`, a later
 `npm rm -g @gpaligot/accountant-cli` / `npm rm -g revolut-business-cli`.) If you
 prefer not to link, run a CLI directly:
 `node packages/accountant-cli/dist/index.js verify …`.
+
+### Use skills from any MCP-compatible client (Cursor, Zed, Gemini…)
+
+The `accountant-mcp` server exposes every skill as an MCP prompt. Any client
+that supports `prompts/get` can load a skill into its context without Claude Code:
+
+```json
+{
+  "mcpServers": {
+    "accountant-skills": {
+      "command": "accountant-mcp"
+    }
+  }
+}
+```
+
+Call `prompts/list` to enumerate skills, `prompts/get` with a skill name to
+inject it. Override the skills directory with `--skills-dir <path>` or
+`ACCOUNTANT_SKILLS_DIR=<path>` if the server runs outside this checkout.
+
+### Use skills from Gemini CLI
+
+`plugins/accountant/GEMINI.md` acts as the Gemini equivalent of the Claude
+plugin descriptor. It lists all skills with their trigger phrases and maps
+Claude tool names to their Gemini counterparts (`Read`, `Bash`, `AskUserQuestion`
+→ Gemini equivalents). Load it via `GEMINI.md` in your project root or point
+Gemini CLI at the plugin directory.
 
 ### Validate an accountant workspace
 

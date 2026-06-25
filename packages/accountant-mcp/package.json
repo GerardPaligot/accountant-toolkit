@@ -1,0 +1,22 @@
+{
+  "name": "@gpaligot/accountant-mcp",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "MCP server exposing accountant skills as prompts for any MCP-compatible LLM client (Cursor, Zed, Gemini, local LLMs).",
+  "bin": { "accountant-mcp": "./dist/index.js" },
+  "files": ["dist"],
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "tsup",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsup": "^8.3.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
