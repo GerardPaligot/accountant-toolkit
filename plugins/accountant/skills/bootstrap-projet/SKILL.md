@@ -47,7 +47,11 @@ MEMORY_DIR = ~/.claude/projects/<WORKSPACE with every "/" replaced by "-">/memor
 **Derivation rule for `MEMORY_DIR`:** take `WORKSPACE`, replace every `/` with `-` (the leading `/` becomes the leading `-`), prefix with `~/.claude/projects/`, suffix with `/memory`.  
 Example: `WORKSPACE=/home/alice/expert-accountant` → `MEMORY_DIR=~/.claude/projects/-home-alice-expert-accountant/memory`
 
-All paths below use `$WORKSPACE` and `$MEMORY_DIR`. Substitute the resolved values before reading or running any command.
+All paths below use `$WORKSPACE`, `$MEMORY_DIR`, and `$SKILL_DIR`. Substitute the resolved values before reading or running any command.
+
+- `$WORKSPACE` — value of `ACCOUNTANT_WORKSPACE`
+- `$MEMORY_DIR` — derived as above
+- `$SKILL_DIR` — absolute path to the directory containing the current skill's `SKILL.md` (Claude derives this from wherever it loaded the skill file; used to invoke co-located scripts without hardcoding a path)
 
 ### Step 1 — Load the memory index
 Read `$MEMORY_DIR/MEMORY.md`, then the linked files in order:

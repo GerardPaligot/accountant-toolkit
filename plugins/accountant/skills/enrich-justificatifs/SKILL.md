@@ -1,6 +1,6 @@
 ---
 name: enrich-justificatifs
-description: Use this skill to enrich existing receipt YAML records with complementary information from Gérard. Scans the records in `/Users/gpaligot/Documents/ai-agents/expert-accountant/receipts/YYYY-MM/` for open warnings, critical alerts, and `info_to_complete` items, asks Gérard targeted questions grouped by theme, updates the YAML files (filling fields, removing resolved alerts, upgrading conditional corporate-tax status to definitive when possible), and refreshes `_index.yaml`. Trigger when the user says "complète les justificatifs", "enrichis les fiches", "réponds aux questions ouvertes", or "résous les warnings".
+description: Use this skill to enrich existing receipt YAML records with complementary information from Gérard. Scans the records in `$WORKSPACE/receipts/YYYY-MM/` for open warnings, critical alerts, and `info_to_complete` items, asks Gérard targeted questions grouped by theme, updates the YAML files (filling fields, removing resolved alerts, upgrading conditional corporate-tax status to definitive when possible), and refreshes `_index.yaml`. Trigger when the user says "complète les justificatifs", "enrichis les fiches", "réponds aux questions ouvertes", or "résous les warnings".
 ---
 
 # Skill — Enriching receipt records with user-provided information
@@ -28,8 +28,7 @@ If the context is not loaded, run the `bootstrap-projet` skill.
 Run the scan script:
 
 ```bash
-cd /Users/gpaligot/Documents/ai-agents/expert-accountant/receipts
-python3 .claude/skills/enrich-justificatifs/scan_gaps.py
+python3 $SKILL_DIR/scan_gaps.py
 ```
 
 The script produces a report on stdout: number of records with gaps, grouping by theme, examples. The standard themes are:
@@ -88,7 +87,7 @@ For each selected theme, process the records in series:
 Once the batch is finished (or midway through if Gérard asks for a break):
 
 ```bash
-python3 /Users/gpaligot/Documents/ai-agents/expert-accountant/.claude/skills/justificatif-describe/build_index.py
+python3 $SKILL_DIR/../justificatif-describe/build_index.py
 ```
 
 ### Step 6 — YAML validation (mandatory)
@@ -96,7 +95,7 @@ python3 /Users/gpaligot/Documents/ai-agents/expert-accountant/.claude/skills/jus
 Validate the updated records + the index against the formal schemas:
 
 ```bash
-cd /Users/gpaligot/Documents/ai-agents/expert-accountant
+cd $WORKSPACE
 python3 .script/verify.py --type receipt
 python3 .script/verify.py --type receipts_index
 ```

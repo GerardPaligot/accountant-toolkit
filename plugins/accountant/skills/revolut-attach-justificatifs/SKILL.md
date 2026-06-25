@@ -1,6 +1,6 @@
 ---
 name: revolut-attach-justificatifs
-description: Use this skill to attach PDF/JPG justificatives to Revolut Business transactions via Chromium piloted by Playwright MCP. Walks each transaction in the period, finds the matching YAML in `/Users/gpaligot/Documents/ai-agents/expert-accountant/receipts/YYYY-MM/`, uploads the PDF, fills the "Remarque" with a short description, and updates the "Catégorie" when relevant. Tracks done pieces in `_revolut_uploaded.md` and blockers in `_revolut_blockers.md`. Trigger when the user says « complète Revolut avec les justificatifs », « attache les PDF dans Revolut », « pousse les YAML vers Revolut ».
+description: Use this skill to attach PDF/JPG justificatives to Revolut Business transactions via Chromium piloted by Playwright MCP. Walks each transaction in the period, finds the matching YAML in `$WORKSPACE/receipts/YYYY-MM/`, uploads the PDF, fills the "Remarque" with a short description, and updates the "Catégorie" when relevant. Tracks done pieces in `_revolut_uploaded.md` and blockers in `_revolut_blockers.md`. Trigger when the user says « complète Revolut avec les justificatifs », « attache les PDF dans Revolut », « pousse les YAML vers Revolut ».
 ---
 
 # Skill — Attaching receipts to Revolut Business transactions
@@ -297,7 +297,7 @@ async function openTransactionAndChargeFileChooser(rowMatchTerms) {
 
 ```js
 // Tool: browser_file_upload
-{ paths: ["/Users/gpaligot/Documents/ai-agents/expert-accountant/receipts/YYYY-MM/nom.pdf-or-jpg"] }
+{ paths: ["$WORKSPACE/receipts/YYYY-MM/nom.pdf-or-jpg"] }
 ```
 
 ### Helper C — Description + Envoyer + Fermer (eval 3)

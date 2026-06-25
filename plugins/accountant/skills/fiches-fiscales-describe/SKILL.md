@@ -1,6 +1,6 @@
 ---
 name: fiches-fiscales-describe
-description: Use this skill to analyze new personal tax documents (income-tax notices, property-tax notices, pre-filled income-tax return, tax-credit advance letters) deposited at the root of `/Users/gpaligot/Documents/ai-agents/expert-accountant/income-tax/`. Detects the document type, produces a YAML fiche per the SCHEMA at `income-tax/SCHEMA.md`, files it into the right subfolder (`tax-notices/`, `property-taxes/`, `pre-filled-returns/`, `credit-advances/`), and refreshes the top-level `_index.yaml`. Trigger when the user says « analyse mon avis d'impôt », « traite la pré-déclaration », « range les pièces fiscales », « lis l'avis de taxe foncière », or drops a DGFiP PDF in the income-tax folder.
+description: Use this skill to analyze new personal tax documents (income-tax notices, property-tax notices, pre-filled income-tax return, tax-credit advance letters) deposited at the root of `$WORKSPACE/income-tax/`. Detects the document type, produces a YAML fiche per the SCHEMA at `income-tax/SCHEMA.md`, files it into the right subfolder (`tax-notices/`, `property-taxes/`, `pre-filled-returns/`, `credit-advances/`), and refreshes the top-level `_index.yaml`. Trigger when the user says « analyse mon avis d'impôt », « traite la pré-déclaration », « range les pièces fiscales », « lis l'avis de taxe foncière », or drops a DGFiP PDF in the income-tax folder.
 ---
 
 # Skill — Analysis and sorting of personal tax documents
@@ -33,7 +33,7 @@ If the conversation is new, run `bootstrap-projet` first to load the context (ho
 ### Step 2 — Inventory the inbox
 
 ```bash
-cd /Users/gpaligot/Documents/ai-agents/expert-accountant/income-tax
+cd $WORKSPACE/income-tax
 ls *.pdf 2>/dev/null
 ```
 
@@ -120,7 +120,7 @@ Procedure for an estimate:
 Once all documents have been processed:
 
 ```bash
-python3 /Users/gpaligot/Documents/ai-agents/expert-accountant/.claude/skills/fiches-fiscales-describe/build_index.py
+python3 $SKILL_DIR/build_index.py
 ```
 
 The script:
@@ -134,7 +134,7 @@ The script:
 Validate the new fiches + the index against the formal schemas:
 
 ```bash
-cd /Users/gpaligot/Documents/ai-agents/expert-accountant
+cd $WORKSPACE
 python3 .script/verify.py --type tax_document
 python3 .script/verify.py --type tax_documents_index
 python3 .script/verify.py --type income_tax_estimate   # if an estimate fiche was produced in this session
@@ -212,7 +212,7 @@ The property at 77 rue du 11 novembre 1918 is in **joint ownership** (indivision
 - `build_index.py` — script that generates the top-level index
 - Skill `bulletin-salaire-describe` — for payslips (separate schema)
 - Skill `bootstrap-projet` — to run before this skill if the context is not loaded
-- Memory `~/.claude/projects/-Users-gpaligot-Documents-ai-agents-expert-accountant/memory/impots_ir_setup.md`
+- Memory `$MEMORY_DIR/impots_ir_setup.md`
 
 ## Skill maintenance
 

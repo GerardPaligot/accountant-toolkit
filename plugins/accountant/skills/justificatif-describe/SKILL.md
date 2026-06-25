@@ -1,6 +1,6 @@
 ---
 name: justificatif-describe
-description: Use this skill to analyze new accounting receipts/invoices (justificatifs) deposited at the root of `/Users/gpaligot/Documents/ai-agents/expert-accountant/receipts/`. Produces a structured YAML fiche per the SCHEMA at `receipts/SCHEMA.md`, files it into the monthly subfolder `YYYY-MM/`, and refreshes `_index.yaml`. Trigger when the user says « analyse les nouveaux justificatifs », « traite les justificatifs », or drops files in the receipts folder.
+description: Use this skill to analyze new accounting receipts/invoices (justificatifs) deposited at the root of `$WORKSPACE/receipts/`. Produces a structured YAML fiche per the SCHEMA at `receipts/SCHEMA.md`, files it into the monthly subfolder `YYYY-MM/`, and refreshes `_index.yaml`. Trigger when the user says « analyse les nouveaux justificatifs », « traite les justificatifs », or drops files in the receipts folder.
 ---
 
 # Skill — Structured analysis and description of receipts
@@ -11,7 +11,7 @@ Skill to process new accounting receipts (cash receipts, invoices, receipts) dep
 
 ## When to use
 
-- The user deposits one or more new PDF/JPG files in `/Users/gpaligot/Documents/ai-agents/expert-accountant/receipts/` (root = inbox)
+- The user deposits one or more new PDF/JPG files in `$WORKSPACE/receipts/` (root = inbox)
 - The user explicitly asks: « analyse les justificatifs », « traite les nouveaux tickets », « décris cette facture »
 - Before an accounting audit, to fill in the documents that have not been analyzed yet
 
@@ -26,7 +26,7 @@ If the conversation is new, run the `bootstrap-projet` skill first to load the c
 ### Step 2 — Inventory the inbox
 
 ```bash
-cd /Users/gpaligot/Documents/ai-agents/expert-accountant/receipts
+cd $WORKSPACE/receipts
 ls *.pdf *.jpg *.jpeg 2>/dev/null
 ```
 
@@ -34,7 +34,7 @@ The files at the root (PDF/JPG/JPEG) are the inbox to process. The `.xlsx` files
 
 ### Step 3 — Load the schema
 
-Read `/Users/gpaligot/Documents/ai-agents/expert-accountant/receipts/SCHEMA.md` for a reminder of the fields, allowed values, and alert codes. **Every fiche must strictly comply with the schema**.
+Read `$WORKSPACE/receipts/SCHEMA.md` for a reminder of the fields, allowed values, and alert codes. **Every fiche must strictly comply with the schema**.
 
 ### Step 4 — For each receipt
 
@@ -58,18 +58,17 @@ Read `/Users/gpaligot/Documents/ai-agents/expert-accountant/receipts/SCHEMA.md` 
 Once all documents have been processed, regenerate `_index.yaml` with the Python script:
 
 ```bash
-cd /Users/gpaligot/Documents/ai-agents/expert-accountant/receipts
-python3 .claude/skills/justificatif-describe/build_index.py
+python3 $SKILL_DIR/build_index.py
 ```
 
-(The `build_index.py` script ships with this skill.)
+(`build_index.py` is co-located with this SKILL.md in the plugin. `ACCOUNTANT_WORKSPACE` must be exported — the bootstrap step does this.)
 
 ### Step 6 — YAML validation (mandatory)
 
 Before the report, validate the new fiches + the index against the formal schemas:
 
 ```bash
-cd /Users/gpaligot/Documents/ai-agents/expert-accountant
+cd $WORKSPACE
 python3 .script/verify.py --type receipt
 python3 .script/verify.py --type receipts_index
 ```
@@ -142,7 +141,7 @@ Give a sober recap:
 ## See also
 
 - `SCHEMA.md` at the root of `receipts/` — formal reference for the YAML format
-- Memory `~/.claude/projects/-Users-gpaligot-Documents-ai-agents-expert-accountant/memory/` — settled decisions, organization, scope of docs
+- Memory `$MEMORY_DIR` — settled decisions, organization, scope of docs
 - Skill `bootstrap-projet` — to run before this skill if the context is not yet loaded
 - Global skill `audit-accountant-paligot` — for cross-cutting accounting audits (this skill focuses on document-by-document processing)
 

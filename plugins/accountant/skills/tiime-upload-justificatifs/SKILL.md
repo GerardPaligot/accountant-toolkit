@@ -1,6 +1,6 @@
 ---
 name: tiime-upload-justificatifs
-description: Use this skill to push the structured YAML fiches produced by `justificatif-describe` into Tiime via a Chromium piloted by Playwright MCP. The fiches live in `/Users/gpaligot/Documents/ai-agents/expert-accountant/receipts/YYYY-MM/`. The skill checks whether each piece already exists in Tiime (auto-created from Revolut sync), attaches the PDF/JPG if missing, and completes the metadata (date, total_incl_tax, vat, label, invoice no., intra-EU VAT number, SIREN). Never validates a piece on first run — stops for human confirmation. Trigger when the user says « upload tiime », « pousse les justificatifs dans Tiime », « complète Tiime avec les YAML ».
+description: Use this skill to push the structured YAML fiches produced by `justificatif-describe` into Tiime via a Chromium piloted by Playwright MCP. The fiches live in `$WORKSPACE/receipts/YYYY-MM/`. The skill checks whether each piece already exists in Tiime (auto-created from Revolut sync), attaches the PDF/JPG if missing, and completes the metadata (date, total_incl_tax, vat, label, invoice no., intra-EU VAT number, SIREN). Never validates a piece on first run — stops for human confirmation. Trigger when the user says « upload tiime », « pousse les justificatifs dans Tiime », « complète Tiime avec les YAML ».
 ---
 
 # Skill — Push YAML fiches into Tiime via Playwright

@@ -1,6 +1,6 @@
 ---
 name: bulletin-salaire-describe
-description: Use this skill to analyze new payslips (bulletins de salaire) deposited at the root of `/Users/gpaligot/Documents/ai-agents/expert-accountant/income-tax/payslips/`. Produces a structured YAML fiche per the SCHEMA at `income-tax/payslips/SCHEMA.md`, files it into `YYYY/<person>/`, and refreshes `_index.yaml` with annual totals for the income-tax return. Trigger when the user says « analyse les bulletins de salaire », « traite les nouveaux bulletins », « classe ce bulletin », « prépare l'IR à partir des bulletins ».
+description: Use this skill to analyze new payslips (bulletins de salaire) deposited at the root of `$WORKSPACE/income-tax/payslips/`. Produces a structured YAML fiche per the SCHEMA at `income-tax/payslips/SCHEMA.md`, files it into `YYYY/<person>/`, and refreshes `_index.yaml` with annual totals for the income-tax return. Trigger when the user says « analyse les bulletins de salaire », « traite les nouveaux bulletins », « classe ce bulletin », « prépare l'IR à partir des bulletins ».
 ---
 
 # Skill — Analysis and sorting of payslips for the income-tax return
@@ -11,7 +11,7 @@ Skill to process the new payslips of the Paligot tax household deposited at the 
 
 ## When to use
 
-- The user deposits one or more new PDF files in `/Users/gpaligot/Documents/ai-agents/expert-accountant/income-tax/payslips/` (root = inbox)
+- The user deposits one or more new PDF files in `$WORKSPACE/income-tax/payslips/` (root = inbox)
 - The user explicitly asks: « analyse les bulletins », « traite ce bulletin », « classe les bulletins », « prépare la déclaration IR »
 - Before validating the pre-filled income-tax return
 
@@ -26,7 +26,7 @@ If the conversation is new, run the `bootstrap-projet` skill first to load the c
 ### Step 2 — Inventory the inbox
 
 ```bash
-cd /Users/gpaligot/Documents/ai-agents/expert-accountant/income-tax/payslips
+cd $WORKSPACE/income-tax/payslips
 ls *.pdf 2>/dev/null
 ```
 
@@ -34,7 +34,7 @@ The files at the root (PDF) are the inbox to process. `SCHEMA.md`, `_index.yaml`
 
 ### Step 3 — Load the schema
 
-Read `/Users/gpaligot/Documents/ai-agents/expert-accountant/income-tax/payslips/SCHEMA.md` for a reminder of the fields and alert codes. **Every fiche must strictly comply with the schema**.
+Read `$WORKSPACE/income-tax/payslips/SCHEMA.md` for a reminder of the fields and alert codes. **Every fiche must strictly comply with the schema**.
 
 ### Step 4 — For each payslip
 
@@ -83,8 +83,7 @@ Read `/Users/gpaligot/Documents/ai-agents/expert-accountant/income-tax/payslips/
 Once all documents have been processed, regenerate `_index.yaml`:
 
 ```bash
-cd /Users/gpaligot/Documents/ai-agents/expert-accountant/income-tax/payslips
-python3 .claude/skills/bulletin-salaire-describe/build_index.py
+python3 $SKILL_DIR/build_index.py
 ```
 
 The script:
@@ -98,7 +97,7 @@ The script:
 Validate the new fiches + the index against the formal schemas:
 
 ```bash
-cd /Users/gpaligot/Documents/ai-agents/expert-accountant
+cd $WORKSPACE
 python3 .script/verify.py --type payslip
 python3 .script/verify.py --type payslips_index
 ```
@@ -188,7 +187,7 @@ The annual year-to-date printed on each payslip lets you detect gaps:
 - `SCHEMA.md` at the root of `payslips/` — formal reference
 - `build_index.py` — script that generates the annual index
 - Skill `bootstrap-projet` — to run before this skill if the context is not loaded
-- Memory `~/.claude/projects/-Users-gpaligot-Documents-ai-agents-expert-accountant/memory/` — household profile + decisions
+- Memory `$MEMORY_DIR` — household profile + decisions
 - Skill `justificatif-describe` — reference pattern (inbox + YAML + aggregated index)
 
 ## Skill maintenance

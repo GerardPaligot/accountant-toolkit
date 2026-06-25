@@ -32,7 +32,7 @@ If the session is fresh, run the `bootstrap-projet` skill to load PROJET.md + me
 List the files to process:
 
 ```bash
-ls /Users/gpaligot/Documents/ai-agents/expert-accountant/inbox/
+ls $WORKSPACE/inbox/
 ```
 
 **Scan scope**:
@@ -118,7 +118,7 @@ Each sub-skill follows its own procedure (extraction, YAML, final filing in `YYY
 After all the sub-skills, run a full run to confirm consistency:
 
 ```bash
-cd /Users/gpaligot/Documents/ai-agents/expert-accountant
+cd $WORKSPACE
 python3 .script/verify.py
 ```
 
