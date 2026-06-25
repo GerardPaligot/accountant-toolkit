@@ -1,13 +1,13 @@
 ---
 name: enrich-justificatifs
-description: Use this skill to enrich existing receipt YAML records with complementary information from Gérard. Scans the records in `$WORKSPACE/receipts/YYYY-MM/` for open warnings, critical alerts, and `info_to_complete` items, asks Gérard targeted questions grouped by theme, updates the YAML files (filling fields, removing resolved alerts, upgrading conditional corporate-tax status to definitive when possible), and refreshes `_index.yaml`. Trigger when the user says "complète les justificatifs", "enrichis les fiches", "réponds aux questions ouvertes", or "résous les warnings".
+description: Use this skill to enrich existing receipt YAML records with complementary information from the user. Scans the records in `$WORKSPACE/receipts/YYYY-MM/` for open warnings, critical alerts, and `info_to_complete` items, asks the user targeted questions grouped by theme, updates the YAML files (filling fields, removing resolved alerts, upgrading conditional corporate-tax status to definitive when possible), and refreshes `_index.yaml`. Trigger when the user says "complète les justificatifs", "enrichis les fiches", "réponds aux questions ouvertes", or "résous les warnings".
 ---
 
 # Skill — Enriching receipt records with user-provided information
 
 ## Overview
 
-Companion skill to `justificatif-describe`. Once the initial analysis is produced (extraction from the document), many records remain in conditional status because **declarative** elements are missing: the name of the guest at a meal, the purpose of a trip, the status of a DDG reimbursement, the actual business use of a piece of equipment, etc. This skill scans those gaps, groups the questions by theme, asks Gérard, and updates the records + the index.
+Companion skill to `justificatif-describe`. Once the initial analysis is produced (extraction from the document), many records remain in conditional status because **declarative** elements are missing: the name of the guest at a meal, the purpose of a trip, the status of a client reimbursement, the actual business use of a piece of equipment, etc. This skill scans those gaps, groups the questions by theme, asks the user, and updates the records + the index.
 
 ## When to use
 
@@ -37,12 +37,12 @@ The script produces a report on stdout: number of records with gaps, grouping by
 |---|---|---|
 | `client-meal` | `RECEIPT_INCOMPLETE` + `business_context.guest: null` on a restaurant | Who was the guest, their company, the purpose of the meal? |
 | `travel-purpose` | `RECEIPT_INCOMPLETE` on a trip (parking, hotel, transport) | What was the purpose of the trip to [city]? |
-| `iceland-trip-double-reimb` | `POSSIBLE_DOUBLE_BILLING` (Mozza CDG, SSP Iceland) | Did DDG separately reimburse the food expenses of the trip? |
-| `equipment-usage` | `RECEIPT_INCOMPLETE` on unusual IT equipment (audio, accessories) | What is the business use of the Focusrite / KVM Switch / etc.? |
-| `supplies-personal-suspect` | `LIKELY_PERSONAL_PURPOSE` (Faber-Castell, Maped, etc.) | Actual business use or cumulative withdrawal? |
-| `coffee-mrs-paligot` | Match receipts under the name Madame Paligot | Which office vs. personal share to apply? |
-| `taxpayer-position-otera-sunday` | Otera Sunday pattern | Keep the position or drop it? |
-| `corrected-invoice-pending` | Critical `RECEIPT_INCOMPLETE` on Odyssée / MYCS | Request sent? Status of the correction? |
+| `trip-double-reimb` | `POSSIBLE_DOUBLE_BILLING` on a business trip | Did the client/employer separately reimburse these expenses? |
+| `equipment-usage` | `RECEIPT_INCOMPLETE` on unusual IT equipment (audio, accessories) | What is the business use of this item? |
+| `supplies-personal-suspect` | `LIKELY_PERSONAL_PURPOSE` (school supplies, personal goods, etc.) | Actual business use or personal withdrawal? |
+| `household-member-share` | Receipts paid by or involving a household member | Which office vs. personal share to apply? |
+| `taxpayer-position-grocery` | Grocery classified as meal expense | Keep the taxpayer position or correct the category? |
+| `corrected-invoice-pending` | Critical `RECEIPT_INCOMPLETE` — corrected invoice requested | Request sent? Status of the correction? |
 | `personal-payment` | `PERSONAL_PAYMENT` info | CCA 4551 rebilling done? |
 | `duplicate-to-confirm` | Critical `RECEIPT_PARTIAL` with the word DOUBLON | Confirm that only one entry was made in Tiime |
 
@@ -61,7 +61,7 @@ J'ai identifié X fiches avec questions ouvertes, réparties en N thèmes :
 Par quel thème veux-tu commencer ?
 ```
 
-Offer the themes via `AskUserQuestion` or free conversation. Always let Gérard choose the order.
+Offer the themes via `AskUserQuestion` or free conversation. Always let the user choose the order.
 
 ### Step 4 — Asking questions per thematic batch
 
@@ -80,11 +80,11 @@ For each selected theme, process the records in series:
    - Add an `additional_information` block with date + notes + resolutions
    - If relevant, switch `tax_analysis.corporate_tax_deductibility.status` from `conditional` to `yes` and update the reason
    - Update the `summary` if the enrichment changes the meaning
-6. **Confirm to Gérard**: "Fiche mise à jour. Statut IS : conditionnelle → oui. Alertes restantes : 0."
+6. **Confirm to the user**: "Fiche mise à jour. Statut IS : conditionnelle → oui. Alertes restantes : 0."
 
 ### Step 5 — Index update
 
-Once the batch is finished (or midway through if Gérard asks for a break):
+Once the batch is finished (or midway through if the user asks for a break):
 
 ```bash
 python3 $SKILL_DIR/../justificatif-describe/build_index.py
@@ -107,13 +107,13 @@ Short recap:
 - Number of records enriched
 - Corporate-tax statuses upgraded (conditional → yes)
 - Remaining critical alerts
-- Questions still open (that Gérard could not decide in this session)
+- Questions still open (that the user could not decide in this session)
 
 ## YAML update rules
 
 ### A. Updating a client meal
 
-When Gérard provides name + company + purpose:
+When the user provides name + company + purpose:
 
 ```yaml
 # Before
@@ -130,7 +130,7 @@ business_context:
 
 additional_information:
   completion_date: 2026-05-14
-  provided_by: Gérard Paligot
+  provided_by: <workspace_owner>
   notes:
     - "Invité : Jean Dupont, CEO Acme Corp"
     - "Objet : prospection nouvelle mission Q2 2026"
@@ -149,22 +149,22 @@ Same as A but on `business_context.reason`.
 
 ### C. Iceland trip / double reimbursement
 
-If Gérard confirms "DDG did not reimburse separately":
+If the user confirms "the client/employer did not reimburse separately":
 - Remove the `POSSIBLE_DOUBLE_BILLING` alert
 - Corporate-tax status stays `yes` or moves to `yes` if `conditional`
-- Record in `additional_information.notes`: "Confirmation DDG : pas de double remboursement"
+- Record in `additional_information.notes`: "Confirmation client : pas de double remboursement"
 - Apply to the 3-4 records of the trip simultaneously (Mozza CDG 19/04, Mozza CDG 24/04, SSP Iceland 24/04, and the mileage note for the Roissy round trip if relevant)
 
 ### D. Confirmed duplicate not booked
 
-If Gérard confirms "checked in Tiime, only one entry":
+If the user confirms "checked in Tiime, only one entry":
 - Keep the `RECEIPT_PARTIAL` alert but its severity may move from `critical` to `info`
 - Record in `additional_information.notes`: "Confirmation Tiime : doublon non comptabilisé, une seule ligne saisie"
 - Corporate-tax status stays `no` (consistent with the fact that it is a non-booked duplicate)
 
-### E. Match coffee share — Madame Paligot
+### E. Household-member receipt share
 
-If Gérard rules "50 % office / 50 % personal":
+If the user rules "50 % office / 50 % personal" (or another split):
 - Record in `additional_information.notes`: "Quote-part bureau retenue : 50 %"
 - Mentally adjust the deductible amount (the YAML may keep the total amount, but the corporate-tax reason must be updated)
 - No automatic alert removal — this is a taxpayer decision.
@@ -172,8 +172,8 @@ If Gérard rules "50 % office / 50 % personal":
 ### F. Suspect supplies (Faber-Castell, Maped kids)
 
 Two possible resolutions:
-- **Removal**: Gérard decides to remove the expense → add an info alert "EXPENSE_REMOVED" + corporate-tax status = `no` + explanatory note
-- **Keep**: Gérard documents the actual business use → `business_context.reason` filled + `LIKELY_PERSONAL_PURPOSE` alert removed if conviction is strong, kept as `info` otherwise
+- **Removal**: the user decides to remove the expense → add an info alert "EXPENSE_REMOVED" + corporate-tax status = `no` + explanatory note
+- **Keep**: the user documents the actual business use → `business_context.reason` filled + `LIKELY_PERSONAL_PURPOSE` alert removed if conviction is strong, kept as `info` otherwise
 
 ### G. Corrected invoice (Odyssée, MYCS)
 
@@ -184,8 +184,8 @@ Three possible states:
 
 ## Safeguards
 
-- **Never invent** information on Gérard's behalf. If a question stays without a clear answer, **leave the field empty** and keep the alert.
-- **Preserve history**: never delete the trace of a previous enrichment. If Gérard wants to correct information he already gave, add a new entry in `additional_information.notes` rather than replacing the old one.
+- **Never invent** information on the user's behalf. If a question stays without a clear answer, **leave the field empty** and keep the alert.
+- **Preserve history**: never delete the trace of a previous enrichment. If the user wants to correct information he already gave, add a new entry in `additional_information.notes` rather than replacing the old one.
 - **Do not modify extraction fields** (`merchant`, `document`, `amounts`, `nature.details`). These fields reflect the document as it is; they are not "completed".
 - **Check consistency before commit**: if corporate-tax is upgraded from `conditional` to `yes`, the `reason` must be rewritten to no longer mention the resolved condition.
 - **Index must be regenerated** at the end of the session — otherwise the global figures become wrong.

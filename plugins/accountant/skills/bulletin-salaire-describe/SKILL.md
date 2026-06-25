@@ -7,7 +7,7 @@ description: Use this skill to analyze new payslips (bulletins de salaire) depos
 
 ## Overview
 
-Skill to process the new payslips of the Paligot tax household deposited at the root of `income-tax/payslips/`. Produces a YAML fiche compliant with `SCHEMA.md`, files the PDF in `YYYY/<person>/`, and updates the aggregated index that consolidates the annual taxable bases (boxes 1AJ/1BJ + WHT 8HV/8IV) for the income-tax return.
+Skill to process the new payslips of the tax household deposited at the root of `income-tax/payslips/`. Produces a YAML fiche compliant with `SCHEMA.md`, files the PDF in `YYYY/<person>/`, and updates the aggregated index that consolidates the annual taxable bases (boxes 1AJ/1BJ + WHT 8HV/8IV) for the income-tax return.
 
 ## When to use
 
@@ -15,7 +15,7 @@ Skill to process the new payslips of the Paligot tax household deposited at the 
 - The user explicitly asks: « analyse les bulletins », « traite ce bulletin », « classe les bulletins », « prépare la déclaration IR »
 - Before validating the pre-filled income-tax return
 
-**Do not use for**: expense receipts (`receipts/`), tax notices / property taxes / tax-credit advances (PDFs at the root of `income-tax/`), EURL management-remuneration slips (Gérard is a TNS majority manager → no classic payslip for him since 01/11/2025).
+**Do not use for**: expense receipts (`receipts/`), tax notices / property taxes / tax-credit advances (PDFs at the root of `income-tax/`), EURL management-remuneration slips (an EURL TNS majority manager has no classic payslip — check PROJET.md for the household profile).
 
 ## Procedure
 
@@ -40,15 +40,11 @@ Read `$SKILL_DIR/SCHEMA.md` (the schema bundled with this skill) for a reminder 
 
 1. **Read** the PDF with `Read` (Claude reads the payslips directly).
 2. **Identify the person**:
-   - "Nom" field on the payslip → map to the canonical key:
-     - `Gérard Paligot` / `GERARD PALIGOT` → key `gerard`
-     - `Aurore Paligot` / `AURORE PALIGOT` / `PALIGOT AURORE` → key `aurore`
-   - If another name: ask the user to map it before proceeding.
+   - "Nom" field on the payslip → map to the canonical `person_key` using the household member list in PROJET.md (loaded during bootstrap).
+   - If the name is not in PROJET.md: ask the user to identify the person before proceeding.
 3. **Identify the employer**:
-   - The payslip's company name → kebab-case slug for the file name:
-     - `DECATHLON INFORMATIQUE CAMPUS` → `decathlon`
-     - `LES INTREPIDES` → `les-intrepides`
-   - If a new employer never seen before: add an `EMPLOYER_CHANGE` alert.
+   - The payslip's company name → kebab-case slug using the known employers list in PROJET.md.
+   - If a new employer never seen before: add an `EMPLOYER_CHANGE` alert and ask the user.
 4. **Extract the key data**:
    - Period start/end (payslip date format → ISO)
    - Payment date ("Paiement par virement le …" or "Date et Mode de paiement")
@@ -111,23 +107,19 @@ Give a sober recap:
 - Detected missing payslips (to recover from the employer)
 - Critical alerts (final-settlement payslips, year-to-date gaps)
 
-## Rules specific to the Paligot household
+## Workspace-specific rules
 
 ### Person → canonical key mapping
 
-| Name on payslip | Key | Role |
-|---|---|---|
-| GERARD PALIGOT | `gerard` | Sole EURL manager since 01/11/2025 — Decathlon payslips expected until 14/11/2025 then no more payslip (TNS) |
-| AURORE PALIGOT / PALIGOT AURORE | `aurore` | Les Intrépides employee (Executive assistant, since 01/01/2023) |
+The household member list and their canonical `person_key` values are defined in your workspace **PROJET.md** (loaded during bootstrap). Use those keys for folder paths (`YYYY/<person_key>/`) and YAML fields.
+
+Any unrecognized name on a payslip → ask the user to map it before filing.
 
 ### Known employers
 
-| Company name | Slug | Person |
-|---|---|---|
-| DECATHLON INFORMATIQUE CAMPUS | `decathlon` | Gérard (departure 14/11/2025) |
-| LES INTREPIDES | `les-intrepides` | Aurore (ongoing) |
+Known employer slugs are defined in **PROJET.md**. Convention: kebab-case (lowercase, spaces → hyphens).
 
-Any other employer → ask the user for confirmation before filing.
+Any employer absent from PROJET.md → `EMPLOYER_CHANGE` alert + ask the user.
 
 ### Tax year in France
 
@@ -139,16 +131,16 @@ Exception "January salary catch-up" paid in December N-1 = taxable in N-1 but in
 
 ### Income-tax return boxes (quick reference)
 
-The `_index.yaml` directly provides the values to report:
+The `_index.yaml` directly provides the values to report. Replace `<person_key_N>` with the keys defined in PROJET.md:
 
 | Return box | Source in the index |
 |---|---|
-| 1AJ (wages and salaries, taxpayer 1 = Gérard) | `years.<YYYY>.gerard.retained_tax_base` |
-| 1BJ (wages and salaries, taxpayer 2 = Aurore) | `years.<YYYY>.aurore.retained_tax_base` |
-| 8HV (withholding tax, taxpayer 1) | `years.<YYYY>.gerard.total_wht` |
-| 8IV (withholding tax, taxpayer 2) | `years.<YYYY>.aurore.total_wht` |
+| 1AJ (wages and salaries, taxpayer 1) | `years.<YYYY>.<person_key_1>.retained_tax_base` |
+| 1BJ (wages and salaries, taxpayer 2) | `years.<YYYY>.<person_key_2>.retained_tax_base` |
+| 8HV (withholding tax, taxpayer 1) | `years.<YYYY>.<person_key_1>.total_wht` |
+| 8IV (withholding tax, taxpayer 2) | `years.<YYYY>.<person_key_2>.total_wht` |
 
-**Warning**: for Gérard from 2026 on, his EURL TNS management remuneration is **NOT** classic salaries and does not follow this payslip logic. It will be handled separately (box 1GB in practice for an Article 62 manager if the remuneration is taxable, or a dedicated TNS box).
+**Note**: if the EURL manager is a TNS majority manager (Article 62 CGI), their management remuneration is NOT classic salaries and does not follow this payslip logic. It is declared separately (box 1GB or a dedicated TNS box).
 
 ### Special case: final-settlement payslip
 
@@ -169,14 +161,14 @@ The annual year-to-date printed on each payslip lets you detect gaps:
 2. For each payslip, check that `year_to_date.taxable_net` of the current payslip ≈ `year_to_date.taxable_net` of the previous payslip + `monthly_amounts.taxable_net` of the current one.
 3. If the gap > 5 €, either there is a data-entry error or a payslip is missing between the two. Raise a `PAYSLIP_MISSING` or `CUMULATIVE_VS_MONTH_GAP` alert.
 
-**Known case**: for Aurore's first fiche in 2025 (March), the year-to-date is 3 months × ~1 561 € — January 2025 and February 2025 are therefore missing. This information must appear in the index's `missing_payslips` for 2025/aurore.
+If the first available payslip for a person in a given year shows a year-to-date that covers several months, the earlier payslips are missing — note them in the index's `missing_payslips`.
 
 ## Guardrails
 
 - **Do not produce** a YAML fiche if a fiche already exists for this month × person × employer (check all `YYYY/` subfolders before processing). Otherwise: produce one with a `PAYSLIP_CORRECTION` alert (warning) and keep both.
 - **Do not confuse** Taxable net and Net payable: it is the Taxable net that goes into the income-tax return.
 - **Do not confuse** Taxable net and Net social: since 2023 the "Montant net social" is a different legal line, useful for social benefits but not for income tax.
-- **WHT = 0** is normal for Aurore (low household marginal rate 11 %, 4 parts from 2026). No critical alert.
+- **WHT = 0** may be normal depending on the household's marginal rate (check PROJET.md). Raise `WHT_ZERO_WITH_INCOME` as `info` only — not `critical`.
 - **Profit-sharing/participation invested** ≠ paid: only the amount paid to a bank account is potentially taxable beyond the cap (PASS).
 - **YAML format**: avoid starting a list item with a quote `"..."` followed by other text (parse error). Either the whole string is quoted, or no quotes.
 - **Explicit empty fields**: `null` or `[]` rather than omitting the field.
@@ -192,7 +184,7 @@ The annual year-to-date printed on each payslip lets you detect gaps:
 ## Skill maintenance
 
 To be updated when:
-- A new employer joins the household (the "Known employers" table)
+- A new employer joins the household (update PROJET.md, not this skill)
 - A new recurring special item appears
 - The payslip format evolves (2026+ law)
 - The composition of the tax household changes (3rd child June 2026, etc.)

@@ -48,14 +48,14 @@ For each file to process, classify into one type among:
 | Type | Target |
 |---|---|
 | `receipt` | Cash receipt, vendor invoice, merchant receipt — typically paid via the EURL card |
-| `payslip` | Payslip of a member of the tax household (Gérard, Aurore) |
+| `payslip` | Payslip of a member of the tax household (see household members in PROJET.md) |
 | `tax_document` | Personal DGFiP document (income-tax notice, property taxes, pre-filled return, credit advance) |
 | `unknown` | The type fits none of the 3 above, OR several types are possible without certainty |
 
 **Classification procedure** (in this order):
 
 1. **Heuristic on the file name** — often enough:
-   - Payslip keywords: `bulletin`, `paye`, `paie`, `salaire`, `BULLETIN_DE_PAIE`, `decathlon`, `intrepides`, `W_BULLETIN`
+   - Payslip keywords: `bulletin`, `paye`, `paie`, `salaire`, `BULLETIN_DE_PAIE`, `W_BULLETIN` + employer slugs from PROJET.md
    - Tax document keywords: `avis_d_impot`, `Avis_d_impot`, `avis_de_taxes`, `taxes_foncieres`, `declaration_automatique`, `Avance_de_reductions`, `AVANCE_CREDIMPOT`, `impot_sur_les_revenus`
    - If no reliable keyword → go to step 2
 
@@ -121,7 +121,7 @@ After all the sub-skills, run a full run to confirm consistency:
 accountant verify --workspace $WORKSPACE
 ```
 
-Should display « N fichier(s) validé(s), 0 erreur ». If error → flag it in the report and invite Gérard to fix it.
+Should display « N fichier(s) validé(s), 0 erreur ». If error → flag it in the report and invite the user to fix it.
 
 ### Step 8 — Report
 
@@ -140,36 +140,34 @@ Final structured recap:
   Validation YAML     : <résultat de accountant verify>
 ```
 
-## Classification rules — patterns known from the Paligot file
+## Classification rules
 
 To speed up case-by-case detection:
 
 ### Usual merchants → `receipt`
-- Picard Surgelés, Match (supermarché Villeneuve d'Ascq), Ferme du Sart (Otera), Amazon, Apple, Ubiquiti, MYCS, Alan, L-Expert-Accountant, Tiime, EasyPark, StartFabrik
+Known EURL merchants (accounting software, supplier invoices, professional tools, restaurants, etc.) — refer to PROJET.md for the merchant list specific to your file.
 
 ### Usual employers → `payslip`
-- **Decathlon** → Gérard's payslip (up to and including 14/11/2025, then no more payslip since Gérard is TNS as of 15/11/2025)
-- **Les Intrépides** → Aurore's payslip (services à la personne, ongoing)
-- Any other new employer → ask Gérard whether Aurore or Gérard is concerned
+Known employers are listed in PROJET.md. Any employer name or slug found in the file name strongly suggests `payslip`. Any unrecognized employer → ask the user to confirm.
 
 ### DGFiP signs → `tax_document`
 - Header « République Française » + Marianne
 - Mention « Direction générale des Finances publiques »
 - Footer « impots.gouv.fr »
-- Notice reference in the format `25 59 0120257 24` or similar
-- Tax number in the format `30 25 914 136 042` (Gérard) or `30 29 952 505 489` (Aurore)
+- Notice reference in the format `YY DD NNNNNNN NN` or similar
+- Household tax number (see PROJET.md)
 
 ### Ambiguous cases to arbitrate
-- **L-Expert-Accountant invoice** → `receipt` (EURL expense — accounting fees), NOT a tax document.
-- **Tiime Software invoice** → `receipt` (EURL expense — software subscription).
-- **Picard receipt with a « Madame Paligot » mention** → always `receipt` (the business/personal use arbitration is done in the YAML by `justificatif-describe`).
+- **Accounting firm invoice** → `receipt` (EURL expense — accounting fees), NOT a tax document.
+- **Accounting software invoice** → `receipt` (EURL expense — software subscription).
+- **Receipt involving a household member's name** → always `receipt` (the business/personal use arbitration is done in the YAML by `justificatif-describe`).
 
 ## Safeguards
 
-- **NEVER** move a file without explicit confirmation from Gérard on the routing plan (Step 4).
+- **NEVER** move a file without explicit confirmation from the user on the routing plan (Step 4).
 - **NEVER** overwrite an existing file at the destination — keep it in `inbox/` and flag it.
 - **NEVER** modify the PDF/JPG files (read-only for the Read tool).
-- **Do NOT guess**: in case of doubt, mark `unknown` and let Gérard arbitrate later.
+- **Do NOT guess**: in case of doubt, mark `unknown` and let the user arbitrate later.
 - **Do not parallelize** the sub-skills — otherwise the `_index.yaml` files may step on each other.
 - **If the inbox contains > 30 files**, do a mini-batch (10 files max) and re-ask for confirmation between each batch — classification cost is reasonable, but mostly for readability.
 
@@ -187,6 +185,6 @@ To speed up case-by-case detection:
 
 Update when:
 - A new recurring document type is added to the workspace (auto-processed Revolut statements, etc.) → add a classification branch + a new `*-describe` sub-skill
-- A new employer appears for the payslips (Aurore changing jobs, or Gérard taking up salaried employment one day) → add it to the "Usual employers" table
+- A new employer appears for the payslips (household member changing jobs) → update PROJET.md, not this skill
 - The batch threshold (30 files) needs adjusting
 - The naming convention of the `inbox/` folder changes (unlikely)

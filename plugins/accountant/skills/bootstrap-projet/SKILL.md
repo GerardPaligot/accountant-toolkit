@@ -129,9 +129,8 @@ Produce a short, structured message at the end of the bootstrap:
 ```
 J'ai bootstrappé le contexte du projet. Voici l'état :
 
-📋 Profil : Gérard Paligot EURL (SIREN 992 805 804), EURL IS réel simplifié,
-    activité conseil IT pour DuckDuckGo USA, exercice en cours du 01/11/2025
-    au 31/12/2026.
+📋 Profil : <company name from PROJET.md> (<SIREN>), <legal form>, activité <from
+    PROJET.md>, exercice en cours du <start date> au <end date>.
 
 🗂️ Workspace : <X> documents dans <Y> dossiers — <Z nouveaux par rapport au dernier état connu>.
 

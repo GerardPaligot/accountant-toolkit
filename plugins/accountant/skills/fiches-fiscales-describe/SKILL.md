@@ -7,7 +7,7 @@ description: Use this skill to analyze new personal tax documents (income-tax no
 
 ## Overview
 
-A versatile skill that processes **4 types of personal tax documents** issued by the DGFiP for the Paligot household, deposited at the root of `income-tax/`:
+A versatile skill that processes **4 types of personal tax documents** issued by the DGFiP for the tax household, deposited at the root of `income-tax/`:
 
 1. **Income-tax notice** — issued in year N+1 on year-N income (PDF title: "Impôt sur les revenus de YYYY")
 2. **Property-tax notice** — annual, arriving August-September
@@ -71,7 +71,7 @@ If none matches → ask the user before filing.
    - **income-tax-notice**: `BALANCE_DUE` if balance > 0, `PAYMENT_SCHEDULE` if spread out, `FAMILY_QUOTIENT_CAP_ACTIVE` if the average rate ≪ the marginal rate, `PER_CAP_AVAILABLE` if > 5 000 €
    - **property-tax**: info alert on variation > 5 % compared to N-1, `PAYMENT_SCHEDULE` if monthly direct-debit not activated
    - **pre-filled-return**:
-     - `EURL_INCOME_NOT_COUNTED` (critical) if Gérard has an EURL activity and the pre-declaration only mentions his salaries
+     - `EURL_INCOME_NOT_COUNTED` (critical) if the taxpayer has an EURL activity and the pre-declaration only mentions salaries
      - `CESU_PAJE_EMPLOYER` (warning) if CESU-PAJE income detected (= employer household → tax credit to declare)
      - `EXEMPT_OVERTIME_HOURS` (info) if box 1HH/1IH is filled in
      - `TAX_CREDIT_TO_DECLARE` (warning) if the N-1 income-tax notice mentioned recurring credits (childcare, donations, home services) absent from the pre-filled return
@@ -149,53 +149,40 @@ Give a sober recap:
 - Critical alerts (missing EURL income, credits to declare, etc.)
 - Recommended actions to take before the deadline (amend the return, payment, etc.)
 
-## Rules specific to the Paligot household
+## Workspace-specific rules
 
-### Tax-household composition (to be used for consistency)
+### Tax-household composition
 
-- **Taxpayer 1**: Gérard Paligot (key `gerard`), born 05/10/1989 in Ixelles (Belgium), Belgian nationality, tax number `30 25 914 136 042`
-- **Taxpayer 2**: Aurore Paligot, née LAMBRECHTS, born 13/07/1989 (place to be confirmed, BELGIQUE 99 on the pre-filled return), tax number `30 29 952 505 489`
-- **Situation**: Married (M)
-- **Dependent children 2024-2025**: 2 (born 2018 and 2020) → **3 parts**
-- **Dependent children 2026**: 3 expected (3rd planned June 2026) → **4 parts** from 2026 on the 2026 income
-- **Tax address**: 77 RUE DU ONZE NOVEMBRE 1918, 59491 VILLENEUVE D'ASCQ
-- **Tax center**: SIP ROUBAIX, 35 av Charles Fourier, 59066 ROUBAIX CEDEX 1
-- **Marginal rate 2024**: 30 % (taxable income 73 559 € → bracket 28 797-82 341 €)
-- **Average rate 2024**: 5,97 %
+The household composition (taxpayers, keys, situation, parts, dependents, tax address, marginal and average rates) is defined in your workspace **PROJET.md** loaded during bootstrap. Refer to that document for all identity and consistency checks.
 
-### Special case 2025: Gérard's EURL income
+### Special case: EURL manager mid-year transition
 
-Gérard started his EURL on 01/11/2025 and resigned from Decathlon on 14/11/2025. From 15/11/2025, his income is **no longer salaries** but **management remuneration** subject to **article 62 CGI** (TNS majority manager). This remuneration:
-- Is taxable in the "Traitements et salaires" category (box 1GB on the 2042 return) but comes from another source
-- Must be declared **manually** because the DGFiP does not (yet) have the items via DSN
-- 2025 estimate: ~9 000 € (2 months × 4 500 € net, to confirm with the accountant)
+If the EURL manager left salaried employment to become a TNS majority manager during the year, their income from the transition date is **management remuneration** subject to **Article 62 CGI**, not classic salaries. Consequences:
+- Taxable in the "Traitements et salaires" category (box 1GB on the 2042 return) but sourced from the EURL, not reported via DSN
+- Must be declared **manually** — the DGFiP will not pre-fill it
+- The transition date and estimated remuneration are in PROJET.md
 
-→ Any pre-filled return for 2025 income must be **amended** to add this line. Raise critical `EURL_INCOME_NOT_COUNTED` and `RETURN_TO_AMEND`.
+→ Any pre-filled return covering that year must be **amended** to add this line. Raise critical `EURL_INCOME_NOT_COUNTED` and `RETURN_TO_AMEND`.
 
-### Special case: Aurore's CESU-PAJE
+### Special case: CESU-PAJE employer in the household
 
-The 2025 pre-filled return reveals that Aurore receives CESU-PAJE income from M. MARIANELLI KEVIN (1 243 €). This means Aurore **employs** that person via the declarative CESU (e.g. in-home childcare). Tax consequence:
-- The CESU-PAJE income of 1 243 € is taxable on Aurore's side (box 1BA), automatically included
-- But this opens a right to a **50 % home-services tax credit** on the amounts paid (CGI art. 199 sexdecies). If the household paid ~2 500 € to M. Marianelli over the year, the credit would be ~1 250 €.
+If the pre-filled return shows CESU-PAJE income for a taxpayer (box 1BA auto-filled), that taxpayer is acting as a household employer via declarative CESU. Consequences:
+- The CESU-PAJE income is taxable, automatically included
+- But this opens a right to a **50 % home-services tax credit** on amounts paid (CGI art. 199 sexdecies)
 
-→ Raise `CESU_PAJE_EMPLOYER` (warning) with a request for the exact amount paid, to be completed manually in the return.
+→ Raise `CESU_PAJE_EMPLOYER` (warning) and ask the user for the exact amount paid, to be completed manually in the return.
 
-### Special case: childcare for children under 6
+### Special case: childcare tax credit
 
-The children being born in 2018 and 2020:
-- In 2024: 6 years and 4 years → young-children childcare tax credit (< 7 years) eligible for the 2020 child. The 2024 income-tax notice shows a declared credit of 855 € → retained 428 € (probably capped).
-- In 2025: 7 years and 5 years → only the 2020 child is eligible (< 7 years on 1 January 2025).
-- In 2026: 8 years and 6 years → none eligible anymore for the "young children" credit. But the 3rd (June 2026) will be eligible from 2026 then 2027/2028/2029.
+Children under 7 years old on 1 January of the income year qualify for the young-children childcare tax credit (declarative charge — not pre-filled). Check PROJET.md for children's birth years.
 
-→ Always raise a `TAX_CREDIT_TO_DECLARE` warning if the N-1 notice showed a childcare credit and the N pre-filled return does not contain it (normal because these are declarative charges).
+→ Always raise `TAX_CREDIT_TO_DECLARE` if the N-1 notice showed a childcare credit and the N pre-filled return does not contain it.
 
-### Special case: jointly-owned property tax
+### Special case: jointly-owned property and EURL registered office
 
-The property at 77 rue du 11 novembre 1918 is in **joint ownership** (indivision) between Gérard and Aurore (see the 2025 notice: 2 debtors PROP/INDIVIS MF5QD8 and MF5QD7). Consequences:
-- The property tax is owed jointly by the co-owners.
-- If the EURL uses a share of the property for its registered office (see the make-available convention 6,50 % validated 2026-05-25 régime A), the 6,50 % share of the property tax can be **rebilled to the EURL** (corporate-tax-deductible charge) and is no longer deductible on the household side.
+If the EURL uses a share of a jointly-owned home as its registered office (make-available convention), the EURL's share of the property tax can be **rebilled to the EURL** (corporate-tax-deductible) and is no longer a personal charge.
 
-→ For 2025: 744 € total → EURL share = 744 € × 6,50 % = **48,36 €** rebillable. The remaining 695,64 € stays a personal charge.
+The rebilling percentage and convention date are defined in PROJET.md.
 
 ## Guardrails
 
@@ -219,4 +206,4 @@ To be updated when:
 - A new type of DGFiP document appears (e.g. CSG/CRDS wealth notice, IFI)
 - The format of an existing document evolves on the DGFiP side (new box, new label)
 - The household composition changes (3rd child June 2026, marriage, divorce, relocation)
-- Gérard's TNS status evolves (switch to SAS, change of regime)
+- The EURL manager's TNS status evolves (switch to SAS, change of regime)

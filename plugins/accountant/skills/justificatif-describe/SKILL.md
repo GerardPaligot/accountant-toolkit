@@ -15,7 +15,7 @@ Skill to process new accounting receipts (cash receipts, invoices, receipts) dep
 - The user explicitly asks: « analyse les justificatifs », « traite les nouveaux tickets », « décris cette facture »
 - Before an accounting audit, to fill in the documents that have not been analyzed yet
 
-**Do not use for**: DDG client invoices (`factures/` folder), local-premises expenses (`frais-locaux/` folder), mileage expense reports (`expense/` folder). These folders have their own logic.
+**Do not use for**: client invoices (`factures/` folder), local-premises expenses (`frais-locaux/` folder), mileage expense reports (`expense/` folder). These folders have their own logic.
 
 ## Procedure
 
@@ -82,18 +82,11 @@ Give a sober recap:
 - Critical alerts encountered (to validate with the accountant)
 - Possible duplicates (NOT to be booked in Tiime)
 
-## Rules specific to the Gérard Paligot EURL file
+## Rules specific to your EURL file
 
 ### Already-settled patterns (do NOT re-flag unless something is new)
 
-| Pattern | Settled position | Source |
-|---|---|---|
-| Client meal (PlanetSushi, Breton et Fils, Ch'ti Charivari) | OK if guest name + purpose documented | audit_decisions_2026-05.md |
-| Groceries Picard / Otera / Match / Plaisirs et Gourmandises classified as "RESTAURANT" | Taxpayer position maintained; alert `TAXPAYER_POSITION`. Meal-allowance ("AN nourriture") scheme pending accountant validation | audit_decisions_2026-05.md |
-| Iceland trip April 2026 | Deductible subject to no double DDG reimbursement (open question) | audit_decisions_2026-05.md |
-| Odyssée works 729 € | Deductible if convention signed + invoice specifying the room **and** invoice in the EURL's name | audit_decisions_2026-05.md + Odyssée fiche |
-| Apple iPad stylus / Amazon equipment | Reclassify to 606800 (not LOCATIONS DIVERSES) | audit_decisions_2026-05.md |
-| StartFabrik furniture | Direct expense defensible if net excl. VAT < 500 € (the audit recommended a fixed asset but net excl. VAT = 381,90 €) | StartFabrik fiche |
+Settled patterns are stored in the audit decisions memory file (`audit_decisions_*.md`) loaded during bootstrap. Refer to that file for the current list. Do not re-flag a settled pattern unless a new signal changes the analysis — just cite the prior decision in the `prior_decision` block of the YAML.
 
 ### Amazon marketplace patterns
 
@@ -127,7 +120,7 @@ Give a sober recap:
 
 ### EURL intra-Community VAT number
 
-**FR26992805804** — to be mentioned in the merchant references if the document carries it.
+Your EURL's intra-Community VAT number is defined in PROJET.md (loaded during bootstrap). Mention it in the merchant references if the document carries it.
 
 ## Guardrails
 
