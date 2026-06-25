@@ -1,0 +1,574 @@
+# Machine-readable index of the expert-accountant workspace meta-documents.
+#
+# Describes the tracking, reference and index files produced/consumed by the skills,
+# so they can be rebuilt from scratch if lost, and so the skills can check their
+# presence/consistency.
+#
+# Out of scope (deliberately not listed): non-skill business docs such as
+# PROJET.md, accountant notes, guides, conventions, strategies. User decision
+# 2026-05-14: those docs are hand-written and need no formalization.
+
+version: 6
+updated: '2026-06-18'
+
+# Type glossary
+# - reference   : normative file (schema, doctrine). Human source of truth, not
+#                 auto-regenerable. To be versioned and kept carefully.
+# - index       : derived file aggregating the content of a directory. Auto-regenerable
+#                 from the sources.
+# - document    : family of YAML fiches produced by a skill (receipt, payslip, …).
+#                 Identified by a path_pattern (regex) and validated against a formal schema.
+# - tracking    : execution log of a skill. Rebuildable by cross-checking against the
+#                 target tool state (Tiime, Revolut) but with loss of session info.
+# - blockers    : log of unhandled cases / open decisions. Rebuildable by re-running
+#                 the skill and re-judging each case (loss of historical arbitrations).
+#
+# YAML validation (.script/verify.py)
+# Each type=index|document entry can declare:
+#   - schema             : path (workspace-relative) to a .schemas/<n>.schema.yaml (JSON Schema)
+#   - path_pattern       : Python regex (re.match) applied to the workspace-relative path, for type=document
+#   - consistency_checks : list of cross-checks to run after schema validation
+# See .script/README.md for the detail.
+
+meta_documents:
+
+  # ─── Reference schema ─────────────────────────────────────────────────
+
+  - id: receipt_schema
+    path: receipts/SCHEMA.md
+    type: reference
+    format: markdown
+    purpose: >
+      Normative schema of the receipt analysis YAML fiches. Every YAML fiche
+      in receipts/YYYY-MM/<name>.yaml must conform to it.
+    owner_skill: justificatif-describe
+    consumed_by:
+      - justificatif-describe
+      - enrich-justificatifs
+      - tiime-upload-justificatifs
+      - revolut-attach-justificatifs
+    structure_summary: |
+      Markdown sections:
+      - Conventions (encoding, dates, amounts, null values)
+      - Fields (file, merchant, document, dates, amounts, items, payment,
+        categorization, accounting, corporate_tax_deductibility, alerts, info_to_complete)
+      - Alert codes (critical alerts, warnings)
+    regeneration:
+      strategy: not-automatic
+      steps: |
+        Impossible to regenerate without context. To be versioned in git.
+        On total loss, rebuild from an existing well-formed YAML fiche
+        + adding the critical sections case by case.
+
+  # ─── Aggregated index ─────────────────────────────────────────────────
+
+  - id: receipt
+    type: document
+    format: yaml
+    path_pattern: '^receipts/\d{4}-\d{2}/[^_][^/]*\.yaml$'
+    schema: .schemas/receipt.schema.yaml
+    purpose: >
+      Individual receipt analysis fiches (one per till slip/invoice).
+      Produced by the justificatif-describe skill. Human doc in
+      receipts/SCHEMA.md.
+    owner_skill: justificatif-describe
+    consumed_by:
+      - justificatif-describe
+      - enrich-justificatifs
+      - tiime-upload-justificatifs
+      - revolut-attach-justificatifs
+
+  - id: receipts_index
+    path: receipts/_index.yaml
+    type: index
+    format: yaml
+    schema: .schemas/receipts-index.schema.yaml
+    purpose: >
+      Aggregate of all the YAML fiches (`receipts/YYYY-MM/*.yaml`) with global
+      totals, breakdowns, consolidated alerts. Secondary source for quick audit
+      and year-end summary.
+    owner_skill: justificatif-describe
+    consumed_by:
+      - bootstrap-projet
+      - enrich-justificatifs
+    structure_summary: |
+      meta:
+        generation_date, scope, entries_count, parse_errors, schema_version
+      global_totals:
+        gross_incl_tax_eur, net_incl_tax_eur_after_dups_credits, net_excl_tax_eur,
+        recoverable_vat_eur_net, note
+      corporate_tax_deductibility_breakdown: { yes, conditional, not-applicable }
+      entries_with_critical_alert: [...]
+      by_category: [ { file, merchant, incl_tax, excl_tax, vat, ... } ]
+    regeneration:
+      strategy: automatic
+      command: |
+        cd /Users/gpaligot/Documents/ai-agents/expert-accountant/receipts
+        python3 .claude/skills/justificatif-describe/build_index.py
+      preconditions:
+        - All YAML fiches conforming to SCHEMA.md must exist under YYYY-MM/
+
+  # ─── Tiime tracking ───────────────────────────────────────────────────
+
+  - id: tiime_uploaded
+    path: receipts/_tiime_uploaded.md
+    type: tracking
+    format: markdown
+    purpose: >
+      Exhaustive log of the pieces whose Tiime metadata has been enriched
+      from the YAML (intra-EU VAT, SIRET, comment, label, recategorization).
+      Read at the start of a session to exclude already-processed pieces.
+    owner_skill: tiime-upload-justificatifs
+    consumed_by:
+      - tiime-upload-justificatifs
+    structure_summary: |
+      # Tiime upload tracking — ...
+      Line format: `- [YYYY-MM-DD] yaml_name — note of the actions`
+      H2 sections per month: `## YYYY-MM (session ...) — N/M`
+    regeneration:
+      strategy: cross-check
+      steps: |
+        1. For each YAML in receipts/YYYY-MM/, open the matching piece
+           in Tiime via the `tiime-upload-justificatifs` skill.
+        2. If the Tiime metadata is already enriched (intra-EU VAT, SIRET, comment,
+           consistent label) → add a line to _tiime_uploaded.md.
+        3. Otherwise → the piece is a candidate for the next session.
+      caveat: |
+        Lossy reconstruction: the session chronology and the detailed
+        arbitration notes are lost. Prefer maintaining the file over time.
+
+  - id: tiime_blockers
+    path: receipts/_tiime_blockers.md
+    type: blockers
+    format: markdown
+    purpose: >
+      Pieces set aside during a Tiime batch: to delete, label to change,
+      comment to replace, user arbitration required, unsupported currency, etc.
+    owner_skill: tiime-upload-justificatifs
+    consumed_by:
+      - tiime-upload-justificatifs
+    structure_summary: |
+      Sections per status:
+      - ✅ Resolved in Tiime this session
+      - 🟡 Gérard decisions partially applied
+      - 🔴 Unresolved pieces
+      Line format: `- [YYYY-MM-DD] yaml_name — REASON — REQUESTED_ACTION`
+    regeneration:
+      strategy: re-audit
+      steps: |
+        Re-run the `tiime-upload-justificatifs` skill in full audit mode:
+        each piece that cannot be enriched automatically (critical alert,
+        Gérard decision required, duplicate, non-existent label) becomes a blocker.
+
+  # ─── Accountant (correspondence with L-expert-accountant.com) ─────────
+
+  - id: accountant_schema
+    path: accountant/SCHEMA.md
+    type: reference
+    format: markdown
+    purpose: >
+      Normative schema of the `_sujet.yaml` fiches that track the lifecycle
+      of the exchanges with the accounting firm (note → email → reply → roll
+      out). Every fiche in accountant/<topic-id>/_sujet.yaml must conform to
+      it.
+    owner_skill: null   # no dedicated skill for now — manual editing
+    consumed_by:
+      - bootstrap-projet
+    structure_summary: |
+      Markdown sections:
+      - accountant/ folder structure
+      - Naming conventions (topic-id in kebab-case, mail-YYYY-MM-DD-*.md)
+      - YAML fields (topic, cycle, deadlines, open_questions,
+        resolved_questions, files, links)
+      - Statuses and transition rules
+    regeneration:
+      strategy: not-automatic
+      steps: |
+        Impossible to regenerate without context. To be versioned in git.
+        On loss, rebuild from an existing well-formed _sujet.yaml
+        fiche.
+
+  - id: accountant_topic
+    type: document
+    format: yaml
+    path_pattern: '^accountant/[^_/]+/_sujet\.yaml$'
+    schema: .schemas/accountant-topic.schema.yaml
+    purpose: >
+      Lifecycle fiches for the accountant topics (one per topic in
+      accountant/<topic-id>/_sujet.yaml). Human doc in accountant/SCHEMA.md.
+    owner_skill: null   # manual editing
+    consumed_by:
+      - bootstrap-projet
+
+  - id: accountant_index
+    path: accountant/_index.yaml
+    type: index
+    format: yaml
+    schema: .schemas/accountant-index.schema.yaml
+    consistency_checks:
+      - id: index_aggregates_documents
+        args:
+          documents_id: accountant_topic
+          index_list_path: topics
+          document_field: path
+    purpose: >
+      Aggregate of all `accountant/<topic-id>/_sujet.yaml` with status,
+      deadlines and number of open questions. Source for bootstrap-projet
+      to announce the topics awaiting the accountant and the upcoming deadlines.
+    owner_skill: null   # no dedicated skill — manual regeneration
+    consumed_by:
+      - bootstrap-projet
+    structure_summary: |
+      meta:
+        generation_date, scope, topics_count, schema_version
+      status_breakdown: { draft, sent, partial-reply, ... }
+      topics: [ { id, title, recipient, status, deadlines, ... } ]
+      upcoming_deadlines: [ { date, topic, type, description } ]
+    regeneration:
+      strategy: manual
+      steps: |
+        Walk accountant/*/_sujet.yaml and rebuild the list of topics
+        with their status, deadlines and question counters. Update
+        upcoming_deadlines by sorting by ascending date.
+
+  # ─── Payslips (income-tax) ──────────────────────────────────────────
+
+  - id: payslips_schema
+    path: income-tax/payslips/SCHEMA.md
+    type: reference
+    format: markdown
+    purpose: >
+      Normative schema of the payslip analysis YAML fiches. Every YAML fiche
+      in income-tax/payslips/YYYY/<person>/*.yaml must conform to it.
+      Income-tax-essential depth + aggregates (gross, taxable net, social net,
+      net pay, WHT withheld, year-to-date cumulatives).
+    owner_skill: bulletin-salaire-describe
+    consumed_by:
+      - bulletin-salaire-describe
+    structure_summary: |
+      Markdown sections:
+      - Conventions (encoding, dates, amounts, fiscal year)
+      - Fields (file, person, employer, period, monthly_amounts, year_to_date,
+        special_items, alerts, summary)
+      - Alert codes (FINAL_SETTLEMENT_PAYSLIP, PAYSLIP_MISSING,
+        WHT_ZERO_WITH_INCOME, PROFIT_SHARING_INVESTED, etc.)
+    regeneration:
+      strategy: not-automatic
+      steps: |
+        Impossible to regenerate without context. To be versioned in git.
+        On loss, rebuild from an existing well-formed YAML fiche
+        + adding the critical sections over time.
+
+  - id: payslip
+    type: document
+    format: yaml
+    path_pattern: '^income-tax/payslips/\d{4}/[^/]+/[^_][^/]*\.yaml$'
+    schema: .schemas/payslip.schema.yaml
+    purpose: >
+      Individual payslip analysis fiches (one per payslip and per person).
+      Produced by the bulletin-salaire-describe skill. Human doc in
+      income-tax/payslips/SCHEMA.md.
+    owner_skill: bulletin-salaire-describe
+    consumed_by:
+      - bulletin-salaire-describe
+
+  - id: payslips_index
+    path: income-tax/payslips/_index.yaml
+    type: index
+    format: yaml
+    schema: .schemas/payslips-index.schema.yaml
+    consistency_checks:
+      - id: index_aggregates_documents
+        args:
+          documents_id: payslip
+          index_list_path: years.*.*.payslips
+          document_field: file
+    purpose: >
+      Aggregate of all the payslip YAML fiches of the tax household
+      (Gérard + Aurore) per year × person. Directly provides the values to
+      report on the income-tax return: boxes 1AJ/1BJ (taxable net salary) and
+      8HV/8IV (WHT already withheld). Automatically detects missing payslips
+      via cumulative consistency.
+    owner_skill: bulletin-salaire-describe
+    consumed_by:
+      - bootstrap-projet
+      - bulletin-salaire-describe
+    structure_summary: |
+      meta:
+        generation_date, scope, payslips_count, schema_version
+      years:
+        <YYYY>:
+          <person_key>:
+            employers, months_covered, missing_payslips,
+            total_gross_present_payslips, total_taxable_net_present_payslips,
+            total_taxable_net_last_payslip_cumulative, retained_tax_base, total_wht,
+            payslips: [ { month, file, gross, taxable_net, wht, alerts } ]
+      household_totals:
+        <YYYY>: { taxable_net, wht_total, payslips_total }
+      critical_alerts: [ <yaml path>... ]
+    regeneration:
+      strategy: automatic
+      command: |
+        python3 /Users/gpaligot/Documents/ai-agents/expert-accountant/.claude/skills/bulletin-salaire-describe/build_index.py
+      preconditions:
+        - All YAML fiches conforming to SCHEMA.md must exist under YYYY/<person>/
+
+  # ─── Personal tax documents (income-tax) ─────────────────────────────
+
+  - id: tax_documents_schema
+    path: income-tax/SCHEMA.md
+    type: reference
+    format: markdown
+    purpose: >
+      Polymorphic normative schema of the YAML fiches describing the personal
+      tax documents of the Paligot household. Covers 4 types via the
+      discriminant field document_type: income-tax-notice, property-tax,
+      pre-filled-return, credit-advance. Every YAML fiche in
+      income-tax/<subfolder>/*.yaml must conform to it.
+    owner_skill: fiches-fiscales-describe
+    consumed_by:
+      - fiches-fiscales-describe
+    structure_summary: |
+      Markdown sections:
+      - Conventions (encoding, dates, amounts, naming convention per type)
+      - Common fields (file, document_type, tax_household, administrative_references,
+        alerts, summary)
+      - Type-specific fields:
+        * income-tax-notice: taxpayer income, taxation, balance, indicators, PER caps
+        * property-tax: property, debtors, tax breakdown, due date
+        * pre-filled-return: pre-filled income, estimated tax, new WHT rate, to_complete
+        * credit-advance: amount, disbursement date, calculation base, adjustment
+      - Alert codes (EURL_INCOME_NOT_COUNTED, CESU_PAJE_EMPLOYER,
+        TAX_CREDIT_TO_DECLARE, RETURN_TO_AMEND, PER_CAP_AVAILABLE,
+        FAMILY_QUOTIENT_CAP_ACTIVE, ADVANCE_BELOW_CREDITS, etc.)
+    regeneration:
+      strategy: not-automatic
+      steps: |
+        Impossible to regenerate without context. To be versioned in git.
+        On loss, rebuild from an existing well-formed YAML fiche
+        for each type.
+
+  - id: tax_document
+    type: document
+    format: yaml
+    path_pattern: '^income-tax/(tax-notices|property-taxes|pre-filled-returns|credit-advances)/[^_][^/]*\.yaml$'
+    schema: .schemas/tax-document.schema.yaml
+    purpose: >
+      Individual analysis fiches of the personal tax documents
+      (income-tax-notice, property-tax, pre-filled-return, credit-advance).
+      Produced by the fiches-fiscales-describe skill. The discriminant field
+      `document_type` determines the additional required fields.
+      Human doc in income-tax/SCHEMA.md.
+    owner_skill: fiches-fiscales-describe
+    consumed_by:
+      - fiches-fiscales-describe
+
+  - id: income_tax_estimate
+    type: document
+    format: yaml
+    path_pattern: '^income-tax/estimates/[^_][^/]*\.yaml$'
+    schema: .schemas/income-tax-estimate.schema.yaml
+    purpose: >
+      Forecast income-tax estimate fiches for a given fiscal year, produced
+      BEFORE the official return. Income assumptions per taxpayer, projected
+      tax shares, bracket application, low/central/high range, estimated balance
+      due. Kept for ex-post comparison with the actual income-tax notice when it
+      arrives. Human doc in income-tax/SCHEMA.md.
+    owner_skill: fiches-fiscales-describe
+    consumed_by:
+      - fiches-fiscales-describe
+
+  - id: tax_documents_index
+    path: income-tax/_index.yaml
+    type: index
+    format: yaml
+    schema: .schemas/tax-documents-index.schema.yaml
+    purpose: >
+      Top-level index of the income-tax/ folder. Consolidates per fiscal year the
+      4 document types (income-tax-notice, property-tax, pre-filled-return,
+      credit-advance) and references the totals of payslips/_index.yaml. Single
+      source to answer "how much do I owe this year?", "what reference tax
+      income?", "return status?".
+    owner_skill: fiches-fiscales-describe
+    consumed_by:
+      - bootstrap-projet
+      - fiches-fiscales-describe
+    structure_summary: |
+      meta:
+        generation_date, scope, items_count, schema_version
+      years:
+        <YYYY>:
+          income_tax_notice: { reference_tax_income, net_tax, wht_paid, balance, average_rate_pct, marginal_rate_pct, file }
+          property_tax: { total, payment_deadline, file }
+          pre_filled_return: { estimated_tax, remaining_to_pay, estimated_reference_tax_income, shares_count, file }
+          credit_advance: { amount, disbursement_date, credits_origin_year, file }
+          household_payslips: { total_taxable_net, total_wht, payslips_total, detail }
+      critical_alerts: [ <yaml path>... ]
+    regeneration:
+      strategy: automatic
+      command: |
+        python3 /Users/gpaligot/Documents/ai-agents/expert-accountant/.claude/skills/fiches-fiscales-describe/build_index.py
+      preconditions:
+        - All YAML fiches in the subfolders (tax-notices/, property-taxes/,
+          pre-filled-returns/, credit-advances/) must conform to SCHEMA.md
+        - payslips/_index.yaml must already exist (generated by bulletin-salaire-describe)
+
+  # ─── Revolut tracking ─────────────────────────────────────────────────
+
+  - id: revolut_uploaded
+    path: receipts/_revolut_uploaded.md
+    type: tracking
+    format: markdown
+    purpose: >
+      Exhaustive log of the enriched Revolut Business transactions: receipt
+      attached + description entered + Send. Status moved from "Completed ·
+      Expense information required" to plain "Completed".
+    owner_skill: revolut-attach-justificatifs
+    consumed_by:
+      - revolut-attach-justificatifs
+    structure_summary: |
+      # Revolut Business attachment tracking — ...
+      Line format: `- [YYYY-MM-DD] Merchant incl_tax — attached_yaml — description`
+      H2 sections per month: `## YYYY-MM (N transactions[, session ...])`
+      Footer: `## Session total` with the cumulative counter.
+    regeneration:
+      strategy: cross-check
+      steps: |
+        1. Navigate to business.revolut.com/transactions, scroll the history.
+        2. For each transaction with plain "Completed" status AND a receipt
+           attached (visible in the detail panel "Receipts" section), add
+           a line to _revolut_uploaded.md.
+        3. Cross with the YAML in receipts/YYYY-MM/ to recover
+           the attached YAML file name.
+      caveat: |
+        Lossy reconstruction: the exact descriptions entered in Revolut
+        are viewable via the UI but tedious to extract in bulk.
+
+  - id: revolut_blockers
+    path: receipts/_revolut_blockers.md
+    type: blockers
+    format: markdown
+    purpose: >
+      Revolut transactions in "Information required" that could not be
+      enriched: no candidate YAML, several ambiguous candidates, transaction
+      out of scope (direct debit, transfer), non-accounting piece.
+    owner_skill: revolut-attach-justificatifs
+    consumed_by:
+      - revolut-attach-justificatifs
+    structure_summary: |
+      Sections per category:
+      - 🛑 Open Gérard decisions (to arbitrate)
+      - 🟡 To report to the accountant (accounting gaps)
+      - 🔴 Pieces without a matching YAML (to provide later)
+      - ℹ️ Out of skill scope (direct debits, transfers, MYCS duplicates)
+      - ✅ Already enriched manually (plain "Completed" status without skill action)
+      - Documented duplicates (audit)
+      For the versions before the final session: a "Exhaustive queue for
+      a future session" section in copy-paste format: `[transaction] → [YAML path] → [comment]`.
+    regeneration:
+      strategy: re-audit
+      steps: |
+        Re-run the `revolut-attach-justificatifs` skill in inventory mode:
+        - List all the Revolut transactions with "Information required" status
+        - For each, look for a candidate YAML by matching (merchant + date ±2d + amount ±0.01€)
+        - 3 cases per transaction: unique match, no match, several candidates
+        - Pieces without a YAML or ambiguous ones become blockers
+
+# ─── Skills involved ─────────────────────────────────────────────────────
+
+skills:
+  - id: bootstrap-projet
+    path: .claude/skills/bootstrap-projet/SKILL.md
+    role: loads the project context at the start of a session, reads MEMORY.md + PROJET.md
+    reads_meta:
+      - receipts_index
+      - accountant_index
+      - payslips_index
+      - tax_documents_index
+  - id: bulletin-salaire-describe
+    path: .claude/skills/bulletin-salaire-describe/SKILL.md
+    role: analyzes the new payslips and produces one YAML fiche per payslip, filed under YYYY/<person>/
+    writes_meta:
+      - payslips_index
+    reads_meta:
+      - payslips_schema
+  - id: fiches-fiscales-describe
+    path: .claude/skills/fiches-fiscales-describe/SKILL.md
+    role: analyzes the personal tax documents (income-tax notice, property taxes, pre-filled return, credit advance) and files them in the right subfolder
+    writes_meta:
+      - tax_documents_index
+    reads_meta:
+      - tax_documents_schema
+      - payslips_index   # referenced read-only for the consolidation
+  - id: justificatif-describe
+    path: .claude/skills/justificatif-describe/SKILL.md
+    role: analyzes the new receipts and produces a YAML fiche
+    writes_meta:
+      - receipts_index
+    reads_meta:
+      - receipt_schema
+  - id: enrich-justificatifs
+    path: .claude/skills/enrich-justificatifs/SKILL.md
+    role: enriches existing YAML fiches with complementary info from Gérard
+    reads_meta:
+      - receipt_schema
+      - receipts_index
+  - id: tiime-upload-justificatifs
+    path: .claude/skills/tiime-upload-justificatifs/SKILL.md
+    role: pushes the YAML metadata to Tiime via Playwright MCP
+    writes_meta:
+      - tiime_uploaded
+      - tiime_blockers
+    reads_meta:
+      - receipt_schema
+      - tiime_uploaded
+  - id: revolut-attach-justificatifs
+    path: .claude/skills/revolut-attach-justificatifs/SKILL.md
+    role: attaches the PDF/JPG to the Revolut Business transactions via Playwright MCP
+    writes_meta:
+      - revolut_uploaded
+      - revolut_blockers
+    reads_meta:
+      - revolut_uploaded
+      - revolut_blockers
+  - id: add-yaml-resource
+    path: .claude/skills/add-yaml-resource/SKILL.md
+    role: >
+      Meta skill — guide to add a new family of YAML to the validation
+      framework (.schemas/ + manifest + verify.py). It edits this file
+      itself (extends meta_documents) and adds .schemas/*.schema.yaml.
+      writes_meta/reads_meta left empty because this skill acts on the whole
+      manifest, not on a given entry.
+    writes_meta: []
+    reads_meta: []
+  - id: dispatch-inbox
+    path: .claude/skills/dispatch-inbox/SKILL.md
+    role: >
+      Orchestrator skill — detects the type of each file dropped in
+      `inbox/` (receipt | payslip | tax_document | unknown),
+      moves it to the proper inbox of the target sub-skill, then invokes that
+      sub-skill. Produces no YAML itself. Runs verify.py at the end.
+    writes_meta: []
+    reads_meta: []
+
+# ─── Out of scope (quick reference, not regenerable) ─────────────────────
+#
+# Informative list — these docs are hand-written and follow no schema.
+# The user explicitly chose not to formalize them (2026-05-14).
+
+out_of_scope:
+  business_root:
+    - PROJET.md
+    - convention-mise-a-disposition-locaux.md
+    - expertise-fiscale-accountant.md
+    - guide-stock-options-DuckDuckGo.md
+    - guide-frais-deductibles-EURL-domicile.md
+    - strategie-remuneration-dirigeant.md
+    # 2026-05-25: accountant notes moved to accountant/<topic>/note.md
+    # and now framed by accountant_schema (see above).
+    # tiime-list-after-l-expert.md moved to accountant/points-divers/annexes/.
+  memory:
+    location: ~/.claude/projects/-Users-gpaligot-Documents-ai-agents-expert-accountant/memory/
+    note: |
+      Claude memory auto-managed by the system `# auto memory` convention.
+      Not to be formalized here (governed by the Claude system).

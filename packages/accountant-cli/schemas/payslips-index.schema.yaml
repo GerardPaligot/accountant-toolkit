@@ -1,0 +1,80 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: payslips-index.schema.yaml
+title: Aggregated payslips index
+description: >
+  YYYY × person aggregate of the payslip YAML fiches.
+  Associated human doc: income-tax/payslips/SCHEMA.md (index section).
+type: object
+required: [meta, years, household_totals]
+additionalProperties: true
+
+properties:
+
+  meta:
+    type: object
+    required: [generation_date, payslips_count, schema_version]
+    additionalProperties: true
+    properties:
+      generation_date: { type: string, format: date }
+      scope: { type: string }
+      payslips_count: { type: integer, minimum: 0 }
+      parse_errors: { type: integer, minimum: 0 }
+      schema_version: { type: string }
+      note: { type: string }
+
+  years:
+    type: object
+    patternProperties:
+      '^[0-9]+$':
+        type: object
+        additionalProperties:
+          type: object
+          required: [employers, months_covered, total_taxable_net_present_payslips, payslips]
+          additionalProperties: true
+          properties:
+            employers:
+              type: array
+              items: { type: string }
+            months_covered: { type: integer, minimum: 0 }
+            missing_payslips:
+              type: array
+              items:
+                anyOf:
+                  - type: string
+                  - type: object
+                    additionalProperties: true
+            total_gross_present_payslips: { type: number }
+            total_taxable_net_present_payslips: { type: number }
+            total_taxable_net_last_payslip_cumulative: { type: number }
+            retained_tax_base: { type: number }
+            total_wht: { type: number }
+            payslips:
+              type: array
+              items:
+                type: object
+                required: [month, file]
+                additionalProperties: true
+                properties:
+                  month: { type: string, pattern: '^\d{4}-\d{2}$' }
+                  file: { type: string }
+                  gross: { type: number }
+                  taxable_net: { type: number }
+                  wht: { type: number }
+                  alerts: { type: integer, minimum: 0 }
+    additionalProperties: false
+
+  household_totals:
+    type: object
+    patternProperties:
+      '^[0-9]+$':
+        type: object
+        additionalProperties: true
+        properties:
+          taxable_net: { type: number }
+          wht_total: { type: number }
+          payslips_total: { type: integer, minimum: 0 }
+    additionalProperties: false
+
+  critical_alerts:
+    type: array
+    items: { type: string }

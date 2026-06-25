@@ -1,0 +1,187 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: receipt.schema.yaml
+title: Receipt fiche
+description: >
+  YAML analysis fiches for a receipt (till slip, invoice, voucher).
+  Associated human doc: receipts/SCHEMA.md.
+type: object
+required: [file, merchant, document, amounts, nature, tax_analysis, alerts, summary]
+additionalProperties: true
+
+properties:
+
+  file:
+    type: object
+    required: [name, type]
+    additionalProperties: true
+    properties:
+      name: { type: string }
+      type:
+        enum: [cash-receipt, invoice, receipt, note, other]
+      pages: { type: [integer, "null"] }
+
+  merchant:
+    type: object
+    required: [name, country]
+    additionalProperties: true
+    properties:
+      name: { type: string }
+      trade_name: { type: [string, "null"] }
+      siret: { type: [string, "null"] }
+      vat_number: { type: [string, "null"] }
+      rcs: { type: [string, "null"] }
+      address: { type: [string, "null"] }
+      country:
+        enum: [FR, EU, NON_EU]
+      marketplace: { type: [string, "null"] }
+
+  document:
+    type: object
+    required: [date]
+    additionalProperties: true
+    properties:
+      date: { type: string, format: date }
+      time: { type: [string, "null"] }
+      number: { type: [string, "null"] }
+      payment_reference: { type: [string, "null"] }
+      order_reference: { type: [string, "null"] }
+
+  amounts:
+    type: object
+    required: [currency, total_incl_tax, total_excl_tax, vat]
+    additionalProperties: true
+    properties:
+      currency: { type: string }
+      total_incl_tax: { type: number }
+      total_excl_tax: { type: number }
+      discounts: { type: [number, "null"] }
+      vat:
+        type: array
+        items:
+          type: object
+          required: [rate_pct, base_excl_tax, amount]
+          additionalProperties: true
+          properties:
+            rate_pct: { type: number }
+            base_excl_tax: { type: number }
+            amount: { type: number }
+      payment_method: { type: [string, "null"] }
+
+  nature:
+    type: object
+    required: [category, short_description]
+    additionalProperties: true
+    properties:
+      category: { type: string }
+      short_description: { type: string }
+      details:
+        type: array
+        items:
+          anyOf:
+            - { type: string }
+            - { type: object }
+      client_identity_on_document: { type: [string, "null"] }
+
+  business_context:
+    type: object
+    additionalProperties: true
+    properties:
+      business_link: { type: [string, "null"] }
+      guest: { type: [string, "null"] }
+      reason: { type: [string, "null"] }
+      location: { type: [string, "null"] }
+
+  tax_analysis:
+    type: object
+    required: [corporate_tax_deductibility, vat_deductibility]
+    additionalProperties: true
+    properties:
+      corporate_tax_deductibility:
+        type: object
+        required: [status, reason]
+        additionalProperties: true
+        properties:
+          status:
+            enum: [yes, no, conditional, not-applicable]
+          reason: { type: string }
+          references:
+            type: array
+            items: { type: string }
+      vat_deductibility:
+        type: object
+        required: [status]
+        additionalProperties: true
+        properties:
+          status:
+            enum: [yes, no, not-applicable, conditional]
+          recoverable_amount: { type: [number, "null"] }
+          reason: { type: [string, "null"] }
+          eu_reverse_charge: { type: [boolean, "null"] }
+      suggested_gl_account:
+        type: object
+        additionalProperties: true
+        properties:
+          number: { type: [string, "null"] }
+          label: { type: [string, "null"] }
+      fixed_asset:
+        type: object
+        additionalProperties: true
+        properties:
+          required: { type: boolean }
+          threshold_exceeded: { type: boolean }
+          depreciation_years: { type: [number, "null"] }
+
+  alerts:
+    type: array
+    items:
+      type: object
+      required: [code, severity, message]
+      additionalProperties: true
+      properties:
+        code: { type: string }
+        severity:
+          enum: [info, warning, critical]
+        message: { type: string }
+
+  prior_decision:
+    type: object
+    additionalProperties: true
+    properties:
+      source: { type: [string, "null"] }
+      position: { type: [string, "null"] }
+      date: { type: [string, "null"], format: date }
+
+  info_to_complete:
+    type: array
+    items:
+      anyOf:
+        - { type: string }
+        - { type: object }
+
+  summary: { type: string }
+
+  additional_information:
+    type: object
+    additionalProperties: true
+    properties:
+      completion_date: { type: [string, "null"], format: date }
+      provided_by: { type: [string, "null"] }
+      notes:
+        type: array
+        items: { type: string }
+      resolutions:
+        type: array
+        items:
+          type: object
+          additionalProperties: true
+          properties:
+            alert_code: { type: string }
+            resolution: { type: string }
+            previous_corporate_tax_status:
+              anyOf:
+                - { enum: [yes, no, conditional, not-applicable] }
+                - { type: "null" }
+            new_corporate_tax_status:
+              anyOf:
+                - { enum: [yes, no, conditional, not-applicable] }
+                - { type: "null" }

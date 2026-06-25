@@ -1,0 +1,118 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: payslip.schema.yaml
+title: Payslip fiche
+description: >
+  YAML analysis fiches for a payslip (income-tax-essential + aggregates).
+  Associated human doc: income-tax/payslips/SCHEMA.md.
+type: object
+required:
+  - file
+  - person
+  - employer
+  - period
+  - monthly_amounts
+  - year_to_date
+  - alerts
+  - summary
+additionalProperties: true
+
+properties:
+
+  file:
+    type: object
+    required: [name, normalized_name, pages]
+    additionalProperties: true
+    properties:
+      name: { type: string }
+      normalized_name: { type: string }
+      pages: { type: integer, minimum: 1 }
+
+  person:
+    type: object
+    required: [first_name, name, key]
+    additionalProperties: true
+    properties:
+      first_name: { type: string }
+      name: { type: string }
+      key: { type: string, pattern: '^[a-z0-9_-]+$' }
+      employee_id: { type: [string, "null"] }
+      social_security_number: { type: [string, "null"] }
+      birth_date: { type: [string, "null"], format: date }
+
+  employer:
+    type: object
+    required: [name]
+    additionalProperties: true
+    properties:
+      name: { type: string }
+      siren: { type: [string, "null"] }
+      siret: { type: [string, "null"] }
+      ape: { type: [string, "null"] }
+      address: { type: [string, "null"] }
+      collective_agreement: { type: [string, "null"] }
+      company_entry_date: { type: [string, "null"], format: date }
+      establishment_entry_date: { type: [string, "null"], format: date }
+      exit_date: { type: [string, "null"], format: date }
+
+  period:
+    type: object
+    required: [start, end, fiscal_year, calendar_month, partial]
+    additionalProperties: true
+    properties:
+      start: { type: string, format: date }
+      end: { type: string, format: date }
+      fiscal_year: { type: integer, minimum: 2000, maximum: 2100 }
+      calendar_month: { type: string, pattern: '^\d{4}-\d{2}$' }
+      payment_date: { type: [string, "null"], format: date }
+      partial: { type: boolean }
+
+  monthly_amounts:
+    type: object
+    required: [gross, taxable_net, social_net, net_pay_before_tax, wht_withheld]
+    additionalProperties: true
+    properties:
+      gross: { type: number }
+      taxable_net: { type: number }
+      social_net: { type: number }
+      net_pay_before_tax: { type: number }
+      net_pay: { type: [number, "null"] }
+      wht_withheld: { type: number }
+      wht_rate_pct: { type: [number, "null"] }
+      hours_worked: { type: [number, "null"] }
+      employee_contributions: { type: [number, "null"] }
+
+  year_to_date:
+    type: object
+    required: [gross, taxable_net, wht]
+    additionalProperties: true
+    properties:
+      gross: { type: number }
+      taxable_net: { type: number }
+      wht: { type: number }
+      employee_contributions: { type: [number, "null"] }
+      hours: { type: [number, "null"] }
+
+  special_items:
+    type: array
+    items:
+      type: object
+      required: [label, amount]
+      additionalProperties: true
+      properties:
+        label: { type: string }
+        amount: { type: number }
+        income_tax_impact: { type: [string, "null"] }
+
+  alerts:
+    type: array
+    items:
+      type: object
+      required: [code, severity, message]
+      additionalProperties: true
+      properties:
+        code: { type: string }
+        severity:
+          enum: [info, warning, critical]
+        message: { type: string }
+
+  summary: { type: string }

@@ -1,0 +1,16 @@
+{
+  "name": "accountant-toolkit",
+  "owner": {
+    "name": "Gérard Paligot"
+  },
+  "plugins": [
+    {
+      "name": "accountant",
+      "source": "./plugins/accountant",
+      "description": "Skills to manage a French EURL accountant workspace: describe receipts, payslips and tax documents into validated YAML, enrich them, dispatch an inbox, and push metadata to Tiime and Revolut Business.",
+      "version": "0.1.0",
+      "author": { "name": "Gérard Paligot" },
+      "keywords": ["accounting", "comptabilité", "eurl", "tax", "revolut", "tiime"]
+    }
+  ]
+}

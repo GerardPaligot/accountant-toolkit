@@ -1,0 +1,10 @@
+.openapi-generator-ignore
+apis/AccountingCategoriesApi.ts
+apis/AccountsApi.ts
+apis/ExpensesApi.ts
+apis/TaxRatesApi.ts
+apis/TransactionsApi.ts
+apis/index.ts
+index.ts
+models/index.ts
+runtime.ts

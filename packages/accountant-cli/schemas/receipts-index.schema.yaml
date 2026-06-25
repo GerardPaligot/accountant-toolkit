@@ -1,0 +1,107 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: receipts-index.schema.yaml
+title: Aggregated receipts index (receipts/_index.yaml)
+description: >
+  Consolidated aggregate produced by build_index.py of the justificatif-describe
+  skill. Not a flat list of fiches: aggregates by month, category, merchant,
+  alert code and severity. See receipts/SCHEMA.md.
+type: object
+required:
+  - meta
+  - global_totals
+  - corporate_tax_deductibility_breakdown
+  - by_month
+  - by_category
+additionalProperties: true
+
+properties:
+
+  meta:
+    type: object
+    required: [generation_date, scope, entries_count, schema_version]
+    additionalProperties: true
+    properties:
+      generation_date: { type: string, format: date }
+      scope: { type: string }
+      entries_count: { type: integer, minimum: 0 }
+      parse_errors: { type: integer, minimum: 0 }
+      schema_version: { type: string }
+
+  global_totals:
+    type: object
+    additionalProperties: true
+    properties:
+      gross_incl_tax_eur: { type: number }
+      net_incl_tax_eur_after_dups_credits: { type: number }
+      net_excl_tax_eur: { type: number }
+      recoverable_vat_eur_net: { type: number }
+      note: { type: [string, "null"] }
+
+  corporate_tax_deductibility_breakdown:
+    type: object
+    additionalProperties:
+      type: integer
+      minimum: 0
+
+  by_month:
+    type: object
+    patternProperties:
+      '^\d{4}-\d{2}$':
+        type: object
+        additionalProperties: true
+        properties:
+          entries: { type: integer, minimum: 0 }
+          incl_tax_eur: { type: number }
+          excl_tax_eur: { type: number }
+          recoverable_vat_eur: { type: number }
+          categories:
+            type: object
+            additionalProperties:
+              type: integer
+              minimum: 0
+    additionalProperties: false
+
+  by_category:
+    type: object
+    additionalProperties:
+      type: object
+      additionalProperties: true
+      properties:
+        entries: { type: integer, minimum: 0 }
+        incl_tax_eur: { type: number }
+        recoverable_vat_eur: { type: number }
+
+  top_15_merchants_by_incl_tax:
+    type: object
+    additionalProperties:
+      type: object
+      additionalProperties: true
+      properties:
+        entries: { type: integer, minimum: 0 }
+        incl_tax_eur: { type: number }
+
+  alerts_by_code:
+    type: object
+    additionalProperties:
+      type: integer
+      minimum: 0
+
+  alerts_by_severity:
+    type: object
+    additionalProperties:
+      type: integer
+      minimum: 0
+
+  entries_with_critical_alert:
+    type: array
+    items:
+      anyOf:
+        - { type: string }
+        - type: object
+          additionalProperties: true
+          properties:
+            file: { type: string }
+
+  duplicates_do_not_count:
+    type: array
+    items: { type: string }

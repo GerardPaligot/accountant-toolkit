@@ -1,0 +1,169 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: tax-document.schema.yaml
+title: Personal tax document (4-type polymorphic)
+description: >
+  YAML fiches describing a personal tax document of the household
+  (income-tax-notice, property-tax, pre-filled-return, credit-advance). The
+  discriminant field `document_type` determines the additional required fields
+  (via allOf+if). Associated human doc: income-tax/SCHEMA.md.
+type: object
+required: [file, document_type, tax_household, administrative_references, alerts, summary]
+additionalProperties: true
+
+properties:
+
+  file:
+    type: object
+    required: [name, normalized_name, pages]
+    additionalProperties: true
+    properties:
+      name: { type: string }
+      normalized_name: { type: string }
+      pages: { type: integer, minimum: 1 }
+
+  document_type:
+    enum: [income-tax-notice, property-tax, pre-filled-return, credit-advance]
+
+  tax_household:
+    type: object
+    required: [taxpayer_1, marital_status]
+    additionalProperties: true
+    properties:
+      taxpayer_1:
+        type: object
+        required: [first_name, name, key]
+        additionalProperties: true
+      taxpayer_2:
+        anyOf:
+          - type: "null"
+          - type: object
+            additionalProperties: true
+      marital_status:
+        enum: [M, C, D, V, O]
+      tax_shares: { type: [number, "null"] }
+      dependents_count: { type: [integer, "null"] }
+      children_birth_years:
+        type: array
+        items: { type: integer }
+      tax_address: { type: [string, "null"] }
+
+  administrative_references:
+    type: object
+    additionalProperties: true
+
+  alerts:
+    type: array
+    items:
+      type: object
+      required: [code, severity, message]
+      additionalProperties: true
+      properties:
+        code: { type: string }
+        severity:
+          enum: [info, warning, critical]
+        message: { type: string }
+
+  summary: { type: string }
+
+allOf:
+
+  # ─── Variant income-tax-notice ────────────────────────────────────────
+  - if:
+      properties:
+        document_type: { const: income-tax-notice }
+      required: [document_type]
+    then:
+      required: [income_year, issue_year, income, taxation, balance, indicators]
+      properties:
+        income_year: { type: integer }
+        issue_year: { type: integer }
+        income:
+          type: object
+          additionalProperties: true
+        taxation:
+          type: object
+          required: [gross_total_income, net_tax]
+          additionalProperties: true
+        balance:
+          type: object
+          additionalProperties: true
+        indicators:
+          type: object
+          required: [reference_tax_income, average_tax_rate_pct, marginal_tax_rate_pct]
+          additionalProperties: true
+        retirement_savings_cap:
+          type: object
+          additionalProperties: true
+
+  # ─── Variant property-tax ─────────────────────────────────────────────
+  - if:
+      properties:
+        document_type: { const: property-tax }
+      required: [document_type]
+    then:
+      required: [tax_year, property, built_properties, due_payment]
+      properties:
+        tax_year: { type: integer }
+        property:
+          type: object
+          required: [address]
+          additionalProperties: true
+        built_properties:
+          type: object
+          required: [base, taxes, total]
+          additionalProperties: true
+        unbuilt_properties:
+          type: object
+          additionalProperties: true
+        due_payment:
+          type: object
+          required: [amount_due, payment_deadline]
+          additionalProperties: true
+
+  # ─── Variant pre-filled-return ────────────────────────────────────────
+  - if:
+      properties:
+        document_type: { const: pre-filled-return }
+      required: [document_type]
+    then:
+      required: [income_year, filing_year, pre_filled_income, estimated_tax, to_complete]
+      properties:
+        income_year: { type: integer }
+        filing_year: { type: integer }
+        pre_filled_income:
+          type: array
+          items:
+            type: object
+            required: [person_key, category, box, amount]
+            additionalProperties: true
+        estimated_tax:
+          type: object
+          required: [net_tax, remaining_amount_due, estimated_reference_tax_income, shares_count]
+          additionalProperties: true
+        new_wht_rate:
+          type: object
+          additionalProperties: true
+        to_complete:
+          type: array
+          items: { type: string }
+
+  # ─── Variant credit-advance ───────────────────────────────────────────
+  - if:
+      properties:
+        document_type: { const: credit-advance }
+      required: [document_type]
+    then:
+      required: [payment_year, credits_origin_year, advance_amount, disbursement_date]
+      properties:
+        payment_year: { type: integer }
+        credits_origin_year: { type: integer }
+        advance_amount: { type: number }
+        disbursement_date: { type: string, format: date }
+        transfer_label: { type: string }
+        credited_iban: { type: [string, "null"] }
+        calculation_base:
+          type: object
+          additionalProperties: true
+        expected_adjustment:
+          type: object
+          additionalProperties: true

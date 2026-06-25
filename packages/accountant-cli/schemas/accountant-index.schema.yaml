@@ -1,0 +1,74 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: accountant-index.schema.yaml
+title: Aggregated accountant topics index (accountant/_index.yaml)
+description: >
+  Machine-readable view of accountant topics. Aggregates all
+  accountant/<topic>/_sujet.yaml. Associated human doc: accountant/SCHEMA.md
+  (section "Regeneration").
+type: object
+required: [meta, status_breakdown, topics, upcoming_deadlines]
+additionalProperties: true
+
+properties:
+
+  meta:
+    type: object
+    required: [generation_date, scope, topics_count, schema_version]
+    additionalProperties: true
+    properties:
+      generation_date: { type: string, format: date }
+      scope: { type: string }
+      topics_count: { type: integer, minimum: 0 }
+      schema_version: { type: string }
+
+  status_breakdown:
+    type: object
+    additionalProperties: false
+    required: [draft, sent, partial-reply, reply-received, resolved, abandoned]
+    properties:
+      draft: { type: integer, minimum: 0 }
+      sent: { type: integer, minimum: 0 }
+      partial-reply: { type: integer, minimum: 0 }
+      reply-received: { type: integer, minimum: 0 }
+      resolved: { type: integer, minimum: 0 }
+      abandoned: { type: integer, minimum: 0 }
+
+  topics:
+    type: array
+    items:
+      type: object
+      required: [id, title, recipient, status, creation_date, deadlines, path]
+      additionalProperties: true
+      properties:
+        id: { type: string, pattern: '^[a-z0-9]+(-[a-z0-9]+)*$' }
+        title: { type: string }
+        recipient: { type: string }
+        status:
+          enum: [draft, sent, partial-reply, reply-received, resolved, abandoned]
+        creation_date: { type: string, format: date }
+        last_sent_date: { type: [string, "null"], format: date }
+        last_revision_date: { type: [string, "null"], format: date }
+        deadlines:
+          type: object
+          additionalProperties: false
+          properties:
+            principle_reply: { type: [string, "null"], format: date }
+            accounting_action: { type: [string, "null"], format: date }
+            expected_closure: { type: [string, "null"], format: date }
+        open_questions_count: { type: integer, minimum: 0 }
+        resolved_questions_count: { type: integer, minimum: 0 }
+        path: { type: string }
+        project_todo: { type: [string, "null"] }
+
+  upcoming_deadlines:
+    type: array
+    items:
+      type: object
+      required: [date, topic, type]
+      additionalProperties: true
+      properties:
+        date: { type: string, format: date }
+        topic: { type: string }
+        type:
+          enum: [principle_reply, accounting_action, expected_closure]
+        description: { type: string }

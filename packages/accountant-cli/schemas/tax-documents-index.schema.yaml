@@ -1,0 +1,59 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: tax-documents-index.schema.yaml
+title: Top-level personal tax documents index (income-tax/_index.yaml)
+description: >
+  Aggregate by year × type (income-tax-notice, property-tax, pre-filled-return,
+  credit-advance) with a reference to payslips/_index.yaml.
+  Associated human doc: income-tax/SCHEMA.md.
+type: object
+required: [meta, years]
+additionalProperties: true
+
+properties:
+
+  meta:
+    type: object
+    required: [generation_date, items_count, schema_version]
+    additionalProperties: true
+    properties:
+      generation_date: { type: string, format: date }
+      scope: { type: string }
+      items_count: { type: integer, minimum: 0 }
+      parse_errors: { type: integer, minimum: 0 }
+      schema_version: { type: string }
+      note: { type: string }
+
+  years:
+    type: object
+    patternProperties:
+      '^[0-9]+$':
+        type: object
+        additionalProperties: true
+        properties:
+          income_tax_notice: { $ref: '#/$defs/typed_entry' }
+          property_tax: { $ref: '#/$defs/typed_entry' }
+          pre_filled_return: { $ref: '#/$defs/typed_entry' }
+          credit_advance: { $ref: '#/$defs/typed_entry' }
+          household_payslips:
+            type: object
+            additionalProperties: true
+            properties:
+              total_taxable_net: { type: number }
+              total_wht: { type: number }
+              payslips_total: { type: integer, minimum: 0 }
+              detail: { type: string }
+    additionalProperties: false
+
+  critical_alerts:
+    type: array
+    items: { type: string }
+
+$defs:
+  typed_entry:
+    type: object
+    required: [file]
+    additionalProperties: true
+    properties:
+      file: { type: string }
+      critical_alerts: { type: integer, minimum: 0 }
+      alerts_total: { type: integer, minimum: 0 }

@@ -1,0 +1,87 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: accountant-topic.schema.yaml
+title: Accountant topic fiche (_sujet.yaml)
+description: >
+  Formal schema for the fiches tracking exchanges with the accounting firm.
+  Associated human doc: accountant/SCHEMA.md.
+type: object
+required: [topic, cycle, deadlines, open_questions, files]
+additionalProperties: true
+
+properties:
+
+  topic:
+    type: object
+    required: [id, title, recipient, status, creation_date]
+    additionalProperties: true
+    properties:
+      id: { type: string, pattern: '^[a-z0-9]+(-[a-z0-9]+)*$' }
+      title: { type: string }
+      recipient: { type: string }
+      status:
+        enum: [draft, sent, partial-reply, reply-received, resolved, abandoned]
+      creation_date: { type: string, format: date }
+
+  cycle:
+    type: array
+    items:
+      type: object
+      required: [date, action]
+      additionalProperties: true
+      properties:
+        date: { type: string, format: date }
+        action:
+          enum: [note-drafting, email-sent, follow-up, accountant-reply, implementation, closure]
+        file: { type: [string, "null"] }
+        note: { type: [string, "null"] }
+
+  deadlines:
+    type: object
+    required: [principle_reply, accounting_action, expected_closure]
+    additionalProperties: false
+    properties:
+      principle_reply: { type: [string, "null"], format: date }
+      accounting_action: { type: [string, "null"], format: date }
+      expected_closure: { type: [string, "null"], format: date }
+
+  open_questions:
+    type: array
+    items: { type: string }
+
+  resolved_questions:
+    type: array
+    items:
+      type: object
+      required: [id, date, reply_summary]
+      additionalProperties: false
+      properties:
+        id: { type: string }
+        date: { type: string, format: date }
+        reply_summary: { type: string }
+
+  files:
+    type: object
+    required: [note, emails_sent, emails_received, attachments]
+    additionalProperties: true
+    properties:
+      note: { type: [string, "null"] }
+      emails_sent:
+        type: array
+        items: { type: string }
+      emails_received:
+        type: array
+        items: { type: string }
+      attachments:
+        type: array
+        items: { type: string }
+      working_attachments: { type: [string, "null"] }
+
+  links:
+    type: object
+    additionalProperties: true
+    properties:
+      project_todo: { type: [string, "null"] }
+      audit_decisions: { type: [string, "null"] }
+      memory:
+        type: array
+        items: { type: string }

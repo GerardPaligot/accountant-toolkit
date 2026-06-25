@@ -1,0 +1,7 @@
+{
+  "name": "accountant",
+  "version": "0.1.0",
+  "description": "Manage a French EURL accountant workspace: describe receipts/payslips/tax documents into validated YAML, enrich them, dispatch an inbox, push to Tiime/Revolut.",
+  "author": { "name": "Gérard Paligot" },
+  "keywords": ["accounting", "comptabilité", "eurl", "tax", "revolut", "tiime"]
+}

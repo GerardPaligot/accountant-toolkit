@@ -1,0 +1,27 @@
+{
+  "name": "revolut-business-cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": { "revolut": "./dist/index.js" },
+  "scripts": {
+    "gen": "rm -rf src/generated && openapi-generator-cli generate -i ../json/business.json -g typescript-fetch -o src/generated --skip-validate-spec --global-property apis=Expenses:Transactions:Accounts:AccountingCategories:TaxRates,models,supportingFiles --additional-properties=supportsES6=true,typescriptThreePlus=true,withoutRuntimeChecks=true && node scripts/patch-generated.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "dev": "tsx src/cli/index.ts"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "@openapitools/openapi-generator-cli": "^2.15.3",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^22.0.0",
+    "tsup": "^8.3.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

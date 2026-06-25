@@ -1,0 +1,182 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: income-tax-estimate.schema.yaml
+title: Forecast income-tax estimate, Paligot household
+description: >
+  YAML fiches describing a forecast income-tax estimate for a given fiscal year,
+  produced BEFORE the official return. Frames the balance due or expected refund
+  from per-taxpayer income assumptions and the projected bracket scale. One fiche
+  per fiscal year, kept for ex-post comparison with the actual income-tax notice.
+  Associated human doc: income-tax/SCHEMA.md.
+type: object
+required: [file, document_type, fiscal_year, filing_year, tax_household, income_assumptions, calculation, balance, range, alerts, summary]
+additionalProperties: true
+
+properties:
+
+  file:
+    type: object
+    required: [normalized_name, generation_date]
+    additionalProperties: true
+    properties:
+      normalized_name: { type: string }
+      generation_date: { type: string, format: date }
+
+  document_type:
+    const: income-tax-estimate
+
+  fiscal_year: { type: integer }                       # year of estimated income (e.g. 2026)
+  filing_year: { type: integer }                       # year of the return and balance (e.g. 2027)
+
+  tax_household:
+    type: object
+    required: [taxpayer_1, marital_status, estimated_tax_shares]
+    additionalProperties: true
+    properties:
+      taxpayer_1:
+        type: object
+        required: [first_name, name, key]
+        additionalProperties: true
+      taxpayer_2:
+        anyOf:
+          - type: "null"
+          - type: object
+            additionalProperties: true
+      marital_status:
+        enum: [M, C, D, V, O]
+      estimated_tax_shares: { type: number }
+      estimated_dependents_count: { type: [integer, "null"] }
+      children_birth_years:
+        type: array
+        items: { type: integer }
+      family_events_year:
+        type: array
+        items: { type: string }
+
+  income_assumptions:
+    type: object
+    required: [taxpayer_1]
+    additionalProperties: true
+    properties:
+      taxpayer_1:
+        type: object
+        required: [key, estimated_taxable_net_total]
+        additionalProperties: true
+        properties:
+          key: { type: string }
+          sources:
+            type: array
+            items:
+              type: object
+              required: [type, box, estimated_taxable_net]
+              additionalProperties: true
+              properties:
+                type: { type: string }
+                box: { type: string }
+                estimated_taxable_net: { type: number }
+                period: { type: [string, "null"] }
+                notes: { type: [string, "null"] }
+          estimated_taxable_net_total: { type: number }
+      taxpayer_2:
+        anyOf:
+          - type: "null"
+          - type: object
+            additionalProperties: true
+
+  calculation:
+    type: object
+    required: [taxable_income_after_allowance, tax_shares, family_quotient, estimated_net_tax]
+    additionalProperties: true
+    properties:
+      taxable_income_before_allowance: { type: number }
+      allowance_10pct:
+        type: object
+        additionalProperties: true
+      taxable_income_after_allowance: { type: number }
+      tax_shares: { type: number }
+      family_quotient: { type: number }
+      bracket_scale_used: { type: string }
+      bracket_application_per_share:
+        type: array
+        items:
+          type: object
+          additionalProperties: true
+      tax_per_share: { type: number }
+      household_gross_tax: { type: number }
+      family_quotient_cap:
+        type: object
+        required: [active]
+        additionalProperties: true
+        properties:
+          active: { type: boolean }
+          reason: { type: [string, "null"] }
+      estimated_net_tax: { type: number }
+
+  estimated_wht:
+    type: object
+    required: [total]
+    additionalProperties: true
+    properties:
+      taxpayer_1: { type: number }
+      taxpayer_2: { type: number }
+      total: { type: number }
+      notes: { type: [string, "null"] }
+
+  balance:
+    type: object
+    required: [estimated_tax_owed, estimated_wht_paid, estimated_balance_due]
+    additionalProperties: true
+    properties:
+      estimated_tax_owed: { type: number }
+      estimated_wht_paid: { type: number }
+      credit_advance_to_adjust: { type: [number, "null"] }
+      estimated_balance_due: { type: number }
+      payment_schedule: { type: [string, "null"] }
+
+  range:
+    type: object
+    required: [low, central, high]
+    additionalProperties: true
+    properties:
+      low:
+        type: object
+        required: [assumptions, balance]
+        additionalProperties: true
+      central:
+        type: object
+        required: [assumptions, balance]
+        additionalProperties: true
+      high:
+        type: object
+        required: [assumptions, balance]
+        additionalProperties: true
+
+  estimated_marginal_rate:
+    type: object
+    additionalProperties: true
+    properties:
+      average_rate_pct: { type: number }
+      gross_marginal_rate_pct: { type: number }
+      quotient_capped: { type: boolean }
+      notes: { type: [string, "null"] }
+
+  recommendations:
+    type: array
+    items: { type: string }
+
+  alerts:
+    type: array
+    items:
+      type: object
+      required: [code, severity, message]
+      additionalProperties: true
+      properties:
+        code: { type: string }
+        severity:
+          enum: [info, warning, critical]
+        message: { type: string }
+
+  summary: { type: string }
+
+  methodology_sources:
+    type: array
+    items: { type: string }
