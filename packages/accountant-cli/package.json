@@ -1,6 +1,6 @@
 {
   "name": "@gpaligot/accountant-cli",
-  "version": "0.2.0",
+  "version": "0.1.0",
   "type": "module",
   "description": "Validate and manage an accountant workspace's YAML files against bundled schemas.",
   "bin": { "accountant": "./dist/index.js" },
