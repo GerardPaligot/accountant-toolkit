@@ -200,7 +200,7 @@ Three possible states:
 
 - Skill `justificatif-describe` — to create the initial records from the raw documents
 - Skill `bootstrap-projet` — to run before this skill if the context is not loaded
-- `SCHEMA.md` at the root of `receipts/` — formal reference, notably the `additional_information` block
+- `SCHEMA.md` — formal reference, notably the `additional_information` block. Bundled with the `justificatif-describe` skill (`$SKILL_DIR/../justificatif-describe/SCHEMA.md`)
 - Memory `audit_decisions_2026-05.md` — decisions already settled (do not reopen them without a new signal)
 
 ## Skill maintenance

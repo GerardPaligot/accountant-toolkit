@@ -1,6 +1,6 @@
 ---
 name: bulletin-salaire-describe
-description: Use this skill to analyze new payslips (bulletins de salaire) deposited at the root of `$WORKSPACE/income-tax/payslips/`. Produces a structured YAML fiche per the SCHEMA at `income-tax/payslips/SCHEMA.md`, files it into `YYYY/<person>/`, and refreshes `_index.yaml` with annual totals for the income-tax return. Trigger when the user says « analyse les bulletins de salaire », « traite les nouveaux bulletins », « classe ce bulletin », « prépare l'IR à partir des bulletins ».
+description: Use this skill to analyze new payslips (bulletins de salaire) deposited at the root of `$WORKSPACE/income-tax/payslips/`. Produces a structured YAML fiche per the bundled `SCHEMA.md`, files it into `YYYY/<person>/`, and refreshes `_index.yaml` with annual totals for the income-tax return. Trigger when the user says « analyse les bulletins de salaire », « traite les nouveaux bulletins », « classe ce bulletin », « prépare l'IR à partir des bulletins ».
 ---
 
 # Skill — Analysis and sorting of payslips for the income-tax return
@@ -30,11 +30,11 @@ cd $WORKSPACE/income-tax/payslips
 ls *.pdf 2>/dev/null
 ```
 
-The files at the root (PDF) are the inbox to process. `SCHEMA.md`, `_index.yaml` and the `YYYY/` subfolders stay in place — do not touch them.
+The files at the root (PDF) are the inbox to process. `_index.yaml` and the `YYYY/` subfolders stay in place — do not touch them.
 
 ### Step 3 — Load the schema
 
-Read `$WORKSPACE/income-tax/payslips/SCHEMA.md` for a reminder of the fields and alert codes. **Every fiche must strictly comply with the schema**.
+Read `$SKILL_DIR/SCHEMA.md` (the schema bundled with this skill) for a reminder of the fields and alert codes. **Every fiche must strictly comply with the schema**.
 
 ### Step 4 — For each payslip
 
@@ -184,7 +184,7 @@ The annual year-to-date printed on each payslip lets you detect gaps:
 
 ## See also
 
-- `SCHEMA.md` at the root of `payslips/` — formal reference
+- `SCHEMA.md` — formal reference, bundled with this skill (`$SKILL_DIR/SCHEMA.md`)
 - `build_index.py` — script that generates the annual index
 - Skill `bootstrap-projet` — to run before this skill if the context is not loaded
 - Memory `$MEMORY_DIR` — household profile + decisions

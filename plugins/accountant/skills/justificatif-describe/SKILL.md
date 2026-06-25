@@ -1,6 +1,6 @@
 ---
 name: justificatif-describe
-description: Use this skill to analyze new accounting receipts/invoices (justificatifs) deposited at the root of `$WORKSPACE/receipts/`. Produces a structured YAML fiche per the SCHEMA at `receipts/SCHEMA.md`, files it into the monthly subfolder `YYYY-MM/`, and refreshes `_index.yaml`. Trigger when the user says « analyse les nouveaux justificatifs », « traite les justificatifs », or drops files in the receipts folder.
+description: Use this skill to analyze new accounting receipts/invoices (justificatifs) deposited at the root of `$WORKSPACE/receipts/`. Produces a structured YAML fiche per the bundled `SCHEMA.md`, files it into the monthly subfolder `YYYY-MM/`, and refreshes `_index.yaml`. Trigger when the user says « analyse les nouveaux justificatifs », « traite les justificatifs », or drops files in the receipts folder.
 ---
 
 # Skill — Structured analysis and description of receipts
@@ -30,11 +30,11 @@ cd $WORKSPACE/receipts
 ls *.pdf *.jpg *.jpeg 2>/dev/null
 ```
 
-The files at the root (PDF/JPG/JPEG) are the inbox to process. The `.xlsx` files (Tiime exports) and `.md` files (SCHEMA) stay at the root — do not touch them.
+The files at the root (PDF/JPG/JPEG) are the inbox to process. The `.xlsx` files (Tiime exports) and any `.md` files stay at the root — do not touch them.
 
 ### Step 3 — Load the schema
 
-Read `$WORKSPACE/receipts/SCHEMA.md` for a reminder of the fields, allowed values, and alert codes. **Every fiche must strictly comply with the schema**.
+Read `$SKILL_DIR/SCHEMA.md` (the schema bundled with this skill) for a reminder of the fields, allowed values, and alert codes. **Every fiche must strictly comply with the schema**.
 
 ### Step 4 — For each receipt
 
@@ -140,7 +140,7 @@ Give a sober recap:
 
 ## See also
 
-- `SCHEMA.md` at the root of `receipts/` — formal reference for the YAML format
+- `SCHEMA.md` — formal reference for the YAML format, bundled with this skill (`$SKILL_DIR/SCHEMA.md`)
 - Memory `$MEMORY_DIR` — settled decisions, organization, scope of docs
 - Skill `bootstrap-projet` — to run before this skill if the context is not yet loaded
 - Global skill `audit-accountant-paligot` — for cross-cutting accounting audits (this skill focuses on document-by-document processing)

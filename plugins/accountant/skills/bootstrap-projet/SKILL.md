@@ -77,6 +77,8 @@ Read `$WORKSPACE/accountant/_index.yaml` to immediately get the list of open acc
 
 When the user asks « où en est-on avec le cabinet ? », « quelle réponse attend-on ? », « quoi à confirmer ? », this is the first source to consult before PROJET.md.
 
+If the session involves creating or updating an accountant topic (drafting a note, sending an email, recording a reply), read `$SKILL_DIR/SCHEMA-accountant-topic.md` — the normative `_sujet.yaml` schema, bundled with this skill — to stay conformant.
+
 ### Step 2c — (optional) Load the meta-docs index
 Read `$WORKSPACE/_meta_docs.yaml` if the session involves:
 - Modifying the structure of a meta document (`_tiime_*`, `_revolut_*`, `_index.yaml`, `SCHEMA.md`, `accountant/_index.yaml`)
@@ -114,8 +116,8 @@ Compare the file count per folder with what was expected per PROJET.md / memory:
 - `expense/`: 4 mileage notes, expect 1 new per month
 - `frais-locaux/`: household invoices for the 6.50 % share (EDF, water, Free, property tax, etc.) — expect new receipts through the year
 - `receipts/`: ~60+ receipts + 1 Tiime monthly Excel export
-- `accountant/`: 3 topic subfolders (`an-nourriture/`, `points-divers/`, `convention-locaux/`) + `SCHEMA.md` + `_index.yaml` + `README.md`. Any new subfolder = a new open accountant topic.
-- `income-tax/`: tax household IR folder. `SCHEMA.md` + top-level `_index.yaml` + 5 subfolders: `tax-notices/`, `property-taxes/`, `pre-filled-returns/`, `credit-advances/` (1 piece/year each, handled by `fiches-fiscales-describe`) and `payslips/` (23 payslips, handled by `bulletin-salaire-describe`). **Any PDF at the root of `income-tax/` = inbox of the `fiches-fiscales-describe` skill** (which detects the type and files it). Any PDF at the root of `payslips/` = inbox of `bulletin-salaire-describe`.
+- `accountant/`: 3 topic subfolders (`an-nourriture/`, `points-divers/`, `convention-locaux/`) + `_index.yaml` + `README.md`. Any new subfolder = a new open accountant topic. (The topic schema is bundled with this skill as `SCHEMA-accountant-topic.md`, not stored in the workspace.)
+- `income-tax/`: tax household IR folder. Top-level `_index.yaml` + 5 subfolders: `tax-notices/`, `property-taxes/`, `pre-filled-returns/`, `credit-advances/` (1 piece/year each, handled by `fiches-fiscales-describe`) and `payslips/` (23 payslips, handled by `bulletin-salaire-describe`). (The schemas are bundled with those describe-skills, not stored in the workspace.) **Any PDF at the root of `income-tax/` = inbox of the `fiches-fiscales-describe` skill** (which detects the type and files it). Any PDF at the root of `payslips/` = inbox of `bulletin-salaire-describe`.
 - `.script/`: YAML validation runner (`verify.py`) + `checks/` module + `requirements.txt`. Run at the end of any processing that writes YAML.
 - `.schemas/`: formal JSON Schema (in YAML) applied by `.script/verify.py`. One file per family (`receipt`, `accountant-topic`, `payslip`, `tax-document`) + their respective index. For details, see `.script/README.md`.
 - `inbox/`: unified inbox for any not-yet-sorted document. If it contains files at the root (other than `_README.md` and `_unknown/`), suggest the `dispatch-inbox` skill which detects the type and routes to the right sub-skill.

@@ -1,6 +1,6 @@
 ---
 name: fiches-fiscales-describe
-description: Use this skill to analyze new personal tax documents (income-tax notices, property-tax notices, pre-filled income-tax return, tax-credit advance letters) deposited at the root of `$WORKSPACE/income-tax/`. Detects the document type, produces a YAML fiche per the SCHEMA at `income-tax/SCHEMA.md`, files it into the right subfolder (`tax-notices/`, `property-taxes/`, `pre-filled-returns/`, `credit-advances/`), and refreshes the top-level `_index.yaml`. Trigger when the user says « analyse mon avis d'impôt », « traite la pré-déclaration », « range les pièces fiscales », « lis l'avis de taxe foncière », or drops a DGFiP PDF in the income-tax folder.
+description: Use this skill to analyze new personal tax documents (income-tax notices, property-tax notices, pre-filled income-tax return, tax-credit advance letters) deposited at the root of `$WORKSPACE/income-tax/`. Detects the document type, produces a YAML fiche per the bundled `SCHEMA.md`, files it into the right subfolder (`tax-notices/`, `property-taxes/`, `pre-filled-returns/`, `credit-advances/`), and refreshes the top-level `_index.yaml`. Trigger when the user says « analyse mon avis d'impôt », « traite la pré-déclaration », « range les pièces fiscales », « lis l'avis de taxe foncière », or drops a DGFiP PDF in the income-tax folder.
 ---
 
 # Skill — Analysis and sorting of personal tax documents
@@ -37,11 +37,11 @@ cd $WORKSPACE/income-tax
 ls *.pdf 2>/dev/null
 ```
 
-The files at the root are the inbox. `SCHEMA.md`, `_index.yaml`, and the subfolders (`tax-notices/`, `property-taxes/`, `pre-filled-returns/`, `credit-advances/`, `payslips/`) stay in place.
+The files at the root are the inbox. `_index.yaml` and the subfolders (`tax-notices/`, `property-taxes/`, `pre-filled-returns/`, `credit-advances/`, `payslips/`) stay in place.
 
 ### Step 3 — Load the schema
 
-Read `income-tax/SCHEMA.md` for a reminder of the common fields + type-specific fields + alert codes. **Every YAML fiche must strictly comply with the schema**.
+Read `$SKILL_DIR/SCHEMA.md` (the schema bundled with this skill) for a reminder of the common fields + type-specific fields + alert codes. **Every YAML fiche must strictly comply with the schema**.
 
 ### Step 4 — Detect the type of each PDF
 
@@ -103,7 +103,7 @@ The skill also produces a 5th type of fiche: the **forward-looking income-tax es
 | Convention | `<fiscal_year>_estimation.yaml` (e.g. `2026_estimation.yaml`) |
 | Trigger | The user asks « estime mon IR de l'année prochaine », « combien je vais payer en 2027 ? », « projette mes impôts » |
 | Specific fields | `income_assumptions`, `calculation`, `range` (low/central/high), `estimated_marginal_rate`, `recommendations`, `methodology_sources` |
-| Human doc | Dedicated section in `income-tax/SCHEMA.md` |
+| Human doc | Dedicated section in `$SKILL_DIR/SCHEMA.md` |
 | No source PDF | This is a pure-Claude fiche, not a PDF to analyze |
 
 Procedure for an estimate:
@@ -208,7 +208,7 @@ The property at 77 rue du 11 novembre 1918 is in **joint ownership** (indivision
 
 ## See also
 
-- `SCHEMA.md` at the root of `income-tax/` — formal reference
+- `SCHEMA.md` — formal reference, bundled with this skill (`$SKILL_DIR/SCHEMA.md`)
 - `build_index.py` — script that generates the top-level index
 - Skill `bulletin-salaire-describe` — for payslips (separate schema)
 - Skill `bootstrap-projet` — to run before this skill if the context is not loaded
