@@ -1,0 +1,8 @@
+# Accountant toolkit — workspace configuration
+# Copy this file to workspace.properties and set the path below.
+# workspace.properties is gitignored — it is user-specific.
+#
+# ACCOUNTANT_WORKSPACE: absolute path to your expert-accountant workspace directory.
+# This is the root that contains PROJET.md, receipts/, income-tax/, accountant/, etc.
+#
+ACCOUNTANT_WORKSPACE=/path/to/your/expert-accountant/workspace

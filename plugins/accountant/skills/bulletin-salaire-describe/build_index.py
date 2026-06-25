@@ -6,6 +6,10 @@ import os
 import sys
 from collections import defaultdict
 from datetime import date
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent / "_lib"))
+from config import resolve_workspace  # noqa: E402
 
 try:
     import yaml
@@ -13,7 +17,7 @@ except ImportError:
     print("Error: PyYAML module missing. Install with: pip3 install pyyaml", file=sys.stderr)
     sys.exit(1)
 
-ROOT = "/Users/gpaligot/Documents/ai-agents/expert-accountant/income-tax/payslips"
+ROOT = str(resolve_workspace() / "income-tax" / "payslips")
 
 
 def detect_missing_months(payslips):

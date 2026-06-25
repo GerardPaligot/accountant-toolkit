@@ -23,9 +23,8 @@ produce; this CLI is the hard gate that verifies.
 
 ## Prerequisites
 
-`accountant` on the PATH. Check `accountant --help`. (Built from
-`packages/accountant-cli`; `npm install && npm run build`, then `npm link` or an
-npm install exposes the `accountant` bin.)
+`accountant` on the PATH. Check `accountant --help`. If the command is not found, stop
+your workflow and ask to the user to install the `accountant` CLI.
 
 ## Command reference
 
@@ -113,9 +112,3 @@ New file families and new cross-checks are added in `packages/accountant-cli`
 (schema + `meta-docs.yaml` entry, or a new check in `src/checks/consistency.ts`).
 See `CONTRIBUTING.md` and the proposed `add-yaml-resource` /
 `add-consistency-check` skills.
-
-## See also
-
-- `CONTRIBUTING.md` — how to add a schema / consistency check.
-- `revolut-cli` — the Revolut Business API reader (different tool, different job).
-- The `*-describe` skills — they **produce** the fiches this CLI verifies.
