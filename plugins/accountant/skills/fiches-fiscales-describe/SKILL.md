@@ -113,7 +113,7 @@ Procedure for an estimate:
 4. Check the family-quotient cap (CGI art. 197-I-2°, cap ~1 800 €/half-part).
 5. Compute the forward WHT according to the profile (employee = DGFiP rate / TNS art. 62 = 0 down-payment as long as no N-1 has been declared).
 6. Produce the low/central/high range.
-7. Write the YAML fiche + validate via `verify.py --type income_tax_estimate`.
+7. Write the YAML fiche + validate via `accountant verify --workspace $WORKSPACE --type income_tax_estimate`.
 
 ### Step 6 — Update the top-level index
 
@@ -134,10 +134,9 @@ The script:
 Validate the new fiches + the index against the formal schemas:
 
 ```bash
-cd $WORKSPACE
-python3 .script/verify.py --type tax_document
-python3 .script/verify.py --type tax_documents_index
-python3 .script/verify.py --type income_tax_estimate   # if an estimate fiche was produced in this session
+accountant verify --workspace $WORKSPACE --type tax_document
+accountant verify --workspace $WORKSPACE --type tax_documents_index
+accountant verify --workspace $WORKSPACE --type income_tax_estimate   # if an estimate fiche was produced in this session
 ```
 
 If a schema error appears, fix the offending fiche before continuing. The runner also runs in CI via `.github/workflows/verify-yaml.yml` on every push.

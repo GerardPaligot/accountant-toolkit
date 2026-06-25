@@ -68,9 +68,8 @@ python3 $SKILL_DIR/build_index.py
 Before the report, validate the new fiches + the index against the formal schemas:
 
 ```bash
-cd $WORKSPACE
-python3 .script/verify.py --type receipt
-python3 .script/verify.py --type receipts_index
+accountant verify --workspace $WORKSPACE --type receipt
+accountant verify --workspace $WORKSPACE --type receipts_index
 ```
 
 If a schema error appears, fix the offending fiche before continuing. The runner also runs in CI via `.github/workflows/verify-yaml.yml` on every push.

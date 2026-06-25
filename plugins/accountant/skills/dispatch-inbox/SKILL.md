@@ -109,7 +109,7 @@ For each inbox that received at least one file, invoke the corresponding skill *
 2. If at least 1 `payslip` moved → invoke `bulletin-salaire-describe`
 3. If at least 1 `tax_document` moved → invoke `fiches-fiscales-describe`
 
-Each sub-skill follows its own procedure (extraction, YAML, final filing in `YYYY-MM/` or `YYYY/<person>/` or `<subfolder>/`, `_index.yaml` update, validation `verify.py --type ...`).
+Each sub-skill follows its own procedure (extraction, YAML, final filing in `YYYY-MM/` or `YYYY/<person>/` or `<subfolder>/`, `_index.yaml` update, validation via `accountant verify`).
 
 **Do not parallelize**: sequential only, so that each skill finishes cleanly (index update) before the next starts. Also: only one `_index.yaml` modified at a time.
 
@@ -118,8 +118,7 @@ Each sub-skill follows its own procedure (extraction, YAML, final filing in `YYY
 After all the sub-skills, run a full run to confirm consistency:
 
 ```bash
-cd $WORKSPACE
-python3 .script/verify.py
+accountant verify --workspace $WORKSPACE
 ```
 
 Should display « N fichier(s) validé(s), 0 erreur ». If error → flag it in the report and invite Gérard to fix it.
@@ -138,7 +137,7 @@ Final structured recap:
   Doublons non traités: <liste si applicable>
   Unknowns en attente : inbox/_unknown/ (N fichier(s))
 
-  Validation YAML     : <résultat de verify.py>
+  Validation YAML     : <résultat de accountant verify>
 ```
 
 ## Classification rules — patterns known from the Paligot file
@@ -182,7 +181,7 @@ To speed up case-by-case detection:
   - `bulletin-salaire-describe` — for the household payslips
   - `fiches-fiscales-describe` — for personal DGFiP documents
 - `bootstrap-projet` — loaded at the start of the session if needed
-- `.script/verify.py` — final YAML validation (already triggered by each sub-skill, re-checked globally at step 7)
+- `accountant verify` — final YAML validation (already triggered by each sub-skill, re-checked globally at step 7)
 
 ## Skill maintenance
 

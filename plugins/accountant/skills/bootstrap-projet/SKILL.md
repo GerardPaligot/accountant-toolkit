@@ -118,8 +118,7 @@ Compare the file count per folder with what was expected per PROJET.md / memory:
 - `receipts/`: ~60+ receipts + 1 Tiime monthly Excel export
 - `accountant/`: 3 topic subfolders (`an-nourriture/`, `points-divers/`, `convention-locaux/`) + `_index.yaml` + `README.md`. Any new subfolder = a new open accountant topic. (The topic schema is bundled with this skill as `SCHEMA-accountant-topic.md`, not stored in the workspace.)
 - `income-tax/`: tax household IR folder. Top-level `_index.yaml` + 5 subfolders: `tax-notices/`, `property-taxes/`, `pre-filled-returns/`, `credit-advances/` (1 piece/year each, handled by `fiches-fiscales-describe`) and `payslips/` (23 payslips, handled by `bulletin-salaire-describe`). (The schemas are bundled with those describe-skills, not stored in the workspace.) **Any PDF at the root of `income-tax/` = inbox of the `fiches-fiscales-describe` skill** (which detects the type and files it). Any PDF at the root of `payslips/` = inbox of `bulletin-salaire-describe`.
-- `.script/`: YAML validation runner (`verify.py`) + `checks/` module + `requirements.txt`. Run at the end of any processing that writes YAML.
-- `.schemas/`: formal JSON Schema (in YAML) applied by `.script/verify.py`. One file per family (`receipt`, `accountant-topic`, `payslip`, `tax-document`) + their respective index. For details, see `.script/README.md`.
+- `.schemas/`: formal JSON Schema (in YAML) validated by `accountant verify --workspace $WORKSPACE`. One file per family (`receipt`, `accountant-topic`, `payslip`, `tax-document`) + their respective index.
 - `inbox/`: unified inbox for any not-yet-sorted document. If it contains files at the root (other than `_README.md` and `_unknown/`), suggest the `dispatch-inbox` skill which detects the type and routes to the right sub-skill.
 
 Any significant gap = a new document to analyze.

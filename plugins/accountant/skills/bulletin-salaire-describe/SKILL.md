@@ -97,9 +97,8 @@ The script:
 Validate the new fiches + the index against the formal schemas:
 
 ```bash
-cd $WORKSPACE
-python3 .script/verify.py --type payslip
-python3 .script/verify.py --type payslips_index
+accountant verify --workspace $WORKSPACE --type payslip
+accountant verify --workspace $WORKSPACE --type payslips_index
 ```
 
 If a schema error appears, fix the offending fiche before continuing. The runner also runs in CI via `.github/workflows/verify-yaml.yml` on every push.

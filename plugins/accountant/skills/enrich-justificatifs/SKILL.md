@@ -95,9 +95,8 @@ python3 $SKILL_DIR/../justificatif-describe/build_index.py
 Validate the updated records + the index against the formal schemas:
 
 ```bash
-cd $WORKSPACE
-python3 .script/verify.py --type receipt
-python3 .script/verify.py --type receipts_index
+accountant verify --workspace $WORKSPACE --type receipt
+accountant verify --workspace $WORKSPACE --type receipts_index
 ```
 
 If a schema error appears, fix the offending record before continuing. The runner is also executed in CI via `.github/workflows/verify-yaml.yml` on every push.
