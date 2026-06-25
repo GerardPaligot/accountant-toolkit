@@ -67,20 +67,33 @@ each project. That is what makes it reusable.
 
 Skills are auto-discovered from `skills/<name>/SKILL.md` — nothing else to declare.
 
-### Build & test the CLIs
+### Install the CLIs (local, no registry)
+
+This is a single-user toolkit, so the CLIs are **installed locally from this
+checkout** — not published to a package registry. Build once, then `npm link`
+each package to put its command on your `$PATH`:
 
 ```bash
-npm install        # npm workspaces: installs both CLIs
-npm run build      # builds every package
-npm test           # runs every package's tests
+npm install                              # npm workspaces: deps for both CLIs
+npm run build                            # builds every package → dist/
+npm test                                 # runs every package's tests
+
+# expose the bins globally (symlinks into this checkout)
+( cd packages/accountant-cli && npm link )   # → `accountant`
+( cd packages/revolut-cli   && npm link )    # → `revolut`
 ```
+
+Because `npm link` symlinks the global command at `dist/index.js`, a later
+`npm run build` is picked up automatically — no reinstall. (To remove a bin:
+`npm rm -g @gpaligot/accountant-cli` / `npm rm -g revolut-business-cli`.) If you
+prefer not to link, run a CLI directly:
+`node packages/accountant-cli/dist/index.js verify …`.
 
 ### Validate an accountant workspace
 
 ```bash
 # from inside the accountant folder, or pass --workspace
-node packages/accountant-cli/dist/index.js verify \
-  --workspace /path/to/accountant-folder
+accountant verify --workspace /path/to/accountant-folder
 ```
 
 `accountant verify` reads the workspace's `_meta_docs.yaml` (or the bundled

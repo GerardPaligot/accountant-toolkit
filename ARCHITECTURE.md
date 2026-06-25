@@ -94,8 +94,14 @@ committed, so it builds and runs as-is.
    one test run. npm workspaces (`packages/*`) tie the CLIs together.
 2. **Schemas bundled with the CLI**, with per-workspace override. This is the
    mechanism that turns a one-off workspace into a framework.
-3. **npm distribution** for the CLIs (each has a `bin`). Native single-file
-   binaries (Node SEA) can come later; npm suffices while Node is present.
+3. **Local install, no registry.** This toolkit is single-user, so the CLIs are
+   distributed by building from this checkout and `npm link`-ing each package's
+   `bin` (`accountant`, `revolut`) onto `$PATH` — not by publishing to npm.
+   `npm link` symlinks the global bin at `dist/index.js`, so a later `npm run
+   build` is picked up with no reinstall. Publishing to a registry (and the
+   `files`/scoped-name/`publishConfig` work it needs) is an explicit non-goal
+   until someone else consumes these; a Node SEA single-file binary is a future
+   option if a Node-free install is ever wanted.
 4. **Two separate binaries, not one.** A network API client (`revolut`) and a
    local file validator (`accountant`) are different concerns; they cohabit the
    repo but ship separately.
