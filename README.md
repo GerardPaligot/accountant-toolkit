@@ -6,7 +6,7 @@ YAML fiches, then pushed to accounting tools.
 
 It ships three things from one repo:
 
-1. **A Claude Code plugin** (`plugins/accountant`) — 10 skills
+1. **A Claude Code plugin** (`plugins/accountant`) — skills
    that turn source documents into YAML fiches and push their metadata to Tiime
    and Revolut Business.
 2. **`accountant` CLI** (`packages/accountant-cli`) — validates
@@ -21,14 +21,6 @@ It ships three things from one repo:
 logic and skills live here, in the toolkit, and are installed — not copied — into
 each project. That is what makes it reusable.
 
-> **Repo history note.** This repository began as a mirror of the official
-> Revolut OpenAPI specifications. It has been repurposed as the home of
-> `accountant-toolkit`; the raw `json/` and `yaml/` spec folders were removed when
-> the git history was reset. See [ARCHITECTURE.md](./ARCHITECTURE.md) for the
-> consequences (notably: the `revolut` CLI's client is committed and runs, but
-> its `gen` step needs the spec re-vendored — tracked in
-> [CONTRIBUTING.md](./CONTRIBUTING.md)).
-
 ## Layout
 
 ```
@@ -36,7 +28,7 @@ each project. That is what makes it reusable.
 ├── .claude-plugin/marketplace.json     # makes this repo a Claude plugin marketplace
 ├── plugins/accountant/                 # the plugin — skills auto-discovered
 │   ├── .claude-plugin/plugin.json
-│   └── skills/<10 skills>/SKILL.md
+│   └── skills/<skills>/SKILL.md
 ├── packages/
 │   ├── accountant-cli/                 # YAML validator (Node/TS) + bundled schemas + manifest
 │   └── revolut-cli/                    # one CLI per bank (Revolut today; qonto-cli, … later)
@@ -47,7 +39,7 @@ each project. That is what makes it reusable.
 └── CONTRIBUTING.md                     # how to contribute + proposed skills roadmap
 ```
 
-## The 10 skills
+## The skills
 
 | Skill | Role |
 |---|---|
@@ -61,6 +53,8 @@ each project. That is what makes it reusable.
 | `tiime-upload-justificatifs` | Push YAML metadata to Tiime (Playwright MCP). |
 | `revolut-attach-justificatifs` | Attach receipts to Revolut Business transactions (Playwright MCP). |
 | `revolut-attach-justificatifs-cli` | Same, but uses the `revolut` CLI for the fast read/inventory phase. |
+| `accountant-cli` | How to use the `accountant` CLI to validate workspace YAML. |
+| `revolut-cli` | How to use the `revolut` CLI to read Revolut Business data. |
 
 ## Quickstart
 
